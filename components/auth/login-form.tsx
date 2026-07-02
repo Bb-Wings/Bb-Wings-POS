@@ -18,6 +18,7 @@ import { loginAction } from "@/lib/actions/auth.actions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/lib/store/ui.store";
+import { createClient } from "@/lib/supabase/client";
 
 // ─── Component ────────────────────────────────────────────────────────────
 
@@ -52,8 +53,28 @@ export function LoginForm() {
         if (result.error) setServerError(result.error);
         return;
       }
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      let destination = redirectTo;
+
+      if (user && redirectTo === "/") {
+        const { data: perfil } = await supabase
+          .from("usuarios")
+          .select("roles(nombre)")
+          .eq("id", user.id)
+          .single();
+
+        const rol = (perfil as any)?.roles?.nombre;
+        if (rol === "super_admin" || rol === "admin") {
+          destination = "/admin/dashboard";
+        } else if (rol === "cajero") {
+          destination = "/pos";
+        }
+      }
+
       toast.success("¡Bienvenido!", "Has iniciado sesión correctamente.");
-      router.push(redirectTo);
+      router.push(destination);
       router.refresh();
     });
   };
