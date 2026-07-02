@@ -2,7 +2,7 @@
 /**
  * @fileoverview Register Form — BB Wings Management System
  * @description Formulario de registro multi-campo con validación Zod y Server Action.
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 import { useForm } from "react-hook-form";
@@ -11,12 +11,17 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { User, Mail, Lock, Phone, UserPlus } from "lucide-react";
+import { User, Mail, Lock, Phone, UserPlus, AlertCircle } from "lucide-react";
 import { registerSchema, type RegisterFormValues } from "@/lib/validations/auth.schema";
 import { registerAction } from "@/lib/actions/auth.actions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/lib/store/ui.store";
+
+// ─── Strength config ──────────────────────────────────────────────────────
+
+const STRENGTH_COLORS = ["", "#dc2626", "#f59e0b", "#22c55e", "#16a34a"];
+const STRENGTH_LABELS = ["", "Débil", "Regular", "Buena", "Fuerte"];
 
 // ─── Component ────────────────────────────────────────────────────────────
 
@@ -41,7 +46,7 @@ export function RegisterForm() {
       telefono: "",
       password: "",
       confirmPassword: "",
-      acceptTerms: undefined as unknown as true,
+      acceptTerms: false as any,
     },
   });
 
@@ -51,40 +56,30 @@ export function RegisterForm() {
     setServerError(null);
     startTransition(async () => {
       const result = await registerAction(data);
-
       if (!result.success) {
         if (result.fieldErrors) {
           Object.entries(result.fieldErrors).forEach(([field, msgs]) => {
             setError(field as keyof RegisterFormValues, { message: msgs[0] });
           });
         }
-        if (result.error) {
-          setServerError(result.error);
-        }
+        if (result.error) setServerError(result.error);
         return;
       }
-
-      toast.success(
-        "¡Cuenta creada!",
-        "Revisa tu correo para confirmar tu cuenta."
-      );
+      toast.success("¡Cuenta creada!", "Revisa tu correo para confirmar tu cuenta.");
       router.push("/login");
     });
   };
 
-  // Password strength indicator
+  // Password strength
   const passwordStrength = (() => {
     if (!password) return 0;
-    let strength = 0;
-    if (password.length >= 8) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/[0-9]/.test(password)) strength++;
-    if (/[^A-Za-z0-9]/.test(password)) strength++;
-    return strength;
+    let s = 0;
+    if (password.length >= 8)       s++;
+    if (/[A-Z]/.test(password))     s++;
+    if (/[0-9]/.test(password))     s++;
+    if (/[^A-Za-z0-9]/.test(password)) s++;
+    return s;
   })();
-
-  const strengthLabels = ["", "Débil", "Regular", "Buena", "Fuerte"];
-  const strengthColors = ["", "bg-danger", "bg-warning", "bg-secondary", "bg-success"];
 
   return (
     <motion.div
@@ -95,21 +90,30 @@ export function RegisterForm() {
       <form
         onSubmit={handleSubmit(onSubmit)}
         noValidate
-        className="space-y-4"
+        style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
         aria-label="Formulario de registro"
       >
         {/* Server error */}
         {serverError !== null && (
           <div
-            className="px-4 py-3 rounded-xl bg-danger/10 border border-danger/20 text-danger text-sm"
+            style={{
+              padding: "0.75rem 1rem",
+              borderRadius: "0.75rem",
+              background: "rgba(220,38,38,0.08)",
+              border: "1px solid rgba(220,38,38,0.2)",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "10px",
+            }}
             role="alert"
           >
-            {serverError}
+            <AlertCircle style={{ width: "15px", height: "15px", color: "#f87171", flexShrink: 0, marginTop: "1px" }} />
+            <span style={{ fontSize: "0.82rem", color: "#f87171", lineHeight: 1.5 }}>{serverError}</span>
           </div>
         )}
 
         {/* Name row */}
-        <div className="grid grid-cols-2 gap-3">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
           <Input
             {...register("nombre")}
             label="Nombre"
@@ -156,8 +160,8 @@ export function RegisterForm() {
           id="register-telefono"
         />
 
-        {/* Password */}
-        <div className="space-y-1.5">
+        {/* Password + Strength */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <Input
             {...register("password")}
             type="password"
@@ -169,30 +173,30 @@ export function RegisterForm() {
             required
             id="register-password"
           />
-          {/* Strength bar */}
           {password && (
-            <div className="space-y-1">
-              <div className="flex gap-1">
+            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+              {/* Strength bar */}
+              <div style={{ display: "flex", gap: "4px" }}>
                 {[1, 2, 3, 4].map((level) => (
                   <div
                     key={level}
-                    className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                      passwordStrength >= level
-                        ? strengthColors[passwordStrength]
-                        : "bg-card-border"
-                    }`}
                     aria-hidden="true"
+                    style={{
+                      height: "3px",
+                      flex: 1,
+                      borderRadius: "999px",
+                      background: passwordStrength >= level
+                        ? STRENGTH_COLORS[passwordStrength]
+                        : "rgba(255,255,255,0.1)",
+                      transition: "background 0.3s ease",
+                    }}
                   />
                 ))}
               </div>
-              <p className="text-xs text-gray-muted">
+              <p style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.4)" }}>
                 Seguridad:{" "}
-                <span className={`font-medium ${
-                  passwordStrength <= 1 ? "text-danger" :
-                  passwordStrength === 2 ? "text-warning" :
-                  passwordStrength === 3 ? "text-secondary" : "text-success"
-                }`}>
-                  {strengthLabels[passwordStrength]}
+                <span style={{ fontWeight: 700, color: STRENGTH_COLORS[passwordStrength] }}>
+                  {STRENGTH_LABELS[passwordStrength]}
                 </span>
               </p>
             </div>
@@ -213,28 +217,42 @@ export function RegisterForm() {
         />
 
         {/* Terms */}
-        <div className="space-y-1">
-          <label className="flex items-start gap-2.5 cursor-pointer group">
+        <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: "10px", cursor: "pointer" }}>
             <input
               {...register("acceptTerms")}
               type="checkbox"
               id="register-terms"
-              value="true"
-              className="h-4 w-4 mt-0.5 rounded border-card-border bg-card text-primary focus:ring-primary/20 focus:ring-2 flex-shrink-0"
+              style={{
+                width: "15px",
+                height: "15px",
+                flexShrink: 0,
+                marginTop: "2px",
+                accentColor: "#ea580c",
+                cursor: "pointer",
+              }}
             />
-            <span className="text-sm text-gray-muted group-hover:text-white transition-colors leading-relaxed">
+            <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
               Acepto los{" "}
-              <Link href="/terms" className="text-primary hover:underline">
+              <Link
+                href="/terms"
+                style={{ color: "#f97316", fontWeight: 600, textDecoration: "underline", textDecorationStyle: "dotted" }}
+              >
                 Términos de Uso
-              </Link>{" "}
-              y la{" "}
-              <Link href="/privacy" className="text-primary hover:underline">
+              </Link>
+              {" "}y la{" "}
+              <Link
+                href="/privacy"
+                style={{ color: "#f97316", fontWeight: 600, textDecoration: "underline", textDecorationStyle: "dotted" }}
+              >
                 Política de Privacidad
               </Link>
             </span>
           </label>
           {errors.acceptTerms && (
-            <p className="text-xs text-danger ml-6">{errors.acceptTerms.message}</p>
+            <p style={{ fontSize: "0.72rem", color: "#f87171", paddingLeft: "25px" }}>
+              {errors.acceptTerms.message}
+            </p>
           )}
         </div>
 
@@ -253,11 +271,13 @@ export function RegisterForm() {
         </Button>
 
         {/* Login link */}
-        <p className="text-center text-sm text-gray-muted">
+        <p style={{ textAlign: "center", fontSize: "0.82rem", color: "rgba(255,255,255,0.4)" }}>
           ¿Ya tienes cuenta?{" "}
           <Link
             href="/login"
-            className="text-primary hover:text-primary-400 font-semibold transition-colors"
+            style={{ color: "#f97316", fontWeight: 700, textDecoration: "none" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#fb923c"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#f97316"; }}
           >
             Inicia sesión
           </Link>

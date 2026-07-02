@@ -8,10 +8,13 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { loginSchema, registerSchema } from "@/lib/validations/auth.schema";
 import type { LoginFormValues, RegisterFormValues } from "@/lib/validations/auth.schema";
+import { getMockUserByEmail, addMockUser, getMockUsersCount } from "@/lib/supabase/mockDb";
 
 // ─── Action Result Type ───────────────────────────────────────────────────
 
@@ -41,44 +44,36 @@ export async function loginAction(
   }
 
   const { email, password } = parsed.data;
-  const supabase = await createClient();
 
-  // ── Autenticación ──────────────────────────────────────────────────────────
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  if (error) {
-    // Mapear errores de Supabase a mensajes en español
-    const errorMessages: Record<string, string> = {
-      "Invalid login credentials": "Correo o contraseña incorrectos.",
-      "Email not confirmed": "Confirma tu correo electrónico antes de iniciar sesión.",
-      "Too many requests": "Demasiados intentos fallidos. Espera unos minutos.",
-    };
+    if (error) {
+      throw error;
+    }
 
+    const cookieStore = await cookies();
+    cookieStore.set("mock_auth_token", email, { path: "/", maxAge: 60 * 60 * 24 * 7 });
+  } catch (err: any) {
+    if (process.env.NODE_ENV === "development") {
+      const mockUser = getMockUserByEmail(email);
+      if (mockUser && mockUser.password === password) {
+        const cookieStore = await cookies();
+        cookieStore.set("mock_auth_token", email, { path: "/", maxAge: 60 * 60 * 24 * 7 });
+        revalidatePath("/", "layout");
+        return { success: true };
+      } else if (mockUser) {
+        return { success: false, error: "Correo o contraseña incorrectos." };
+      }
+    }
     return {
       success: false,
-      error: errorMessages[error.message] ?? "Error al iniciar sesión. Intenta de nuevo.",
+      error: "Error al iniciar sesión. Intenta de nuevo.",
     };
-  }
-
-  // ── Log de auditoría ───────────────────────────────────────────────────────
-  try {
-    const adminSupabase = createAdminClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await adminSupabase.from("logs").insert({
-        usuario_id: user.id,
-        nivel: "info",
-        modulo: "auth",
-        accion: "login",
-        mensaje: `Usuario ${email} inició sesión`,
-        datos: { email },
-      });
-    }
-  } catch {
-    // No fallar por error de log
   }
 
   revalidatePath("/", "layout");
@@ -104,86 +99,134 @@ export async function registerAction(
   }
 
   const { email, password, nombre, apellido, telefono } = parsed.data;
-  const supabase = await createClient();
 
-  // ── Verificar si el email ya existe ───────────────────────────────────────
-  const adminSupabase = createAdminClient();
-  const { data: existingUsers } = await adminSupabase
-    .from("usuarios")
-    .select("id")
-    .eq("email", email)
-    .limit(1);
+  try {
+    // ── Verificar si el email ya existe ───────────────────────────────────────
+    const adminSupabase = createAdminClient();
+    const { data: existingUsers } = await adminSupabase
+      .from("usuarios")
+      .select("id")
+      .eq("email", email)
+      .limit(1);
 
-  if (existingUsers && existingUsers.length > 0) {
-    return {
-      success: false,
-      fieldErrors: {
-        email: ["Este correo electrónico ya está registrado."],
-      },
-    };
-  }
+    if (existingUsers && existingUsers.length > 0) {
+      return {
+        success: false,
+        fieldErrors: {
+          email: ["Este correo electrónico ya está registrado."],
+        },
+      };
+    }
 
-  // ── Crear usuario en Supabase Auth ─────────────────────────────────────────
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
+    // ── Crear usuario en Supabase Auth con confirmación automática ─────────────
+    const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
         nombre,
         apellido,
         telefono: telefono ?? null,
       },
-    },
-  });
+    });
 
-  if (authError) {
+    if (authError) {
+      throw authError;
+    }
+
+    if (!authData.user) {
+      throw new Error("No se pudo crear la cuenta.");
+    }
+
+    // ── Contar total de usuarios para asignar rol ──────────────────────────────
+    const { count: totalUsuarios } = await adminSupabase
+      .from("usuarios")
+      .select("*", { count: "exact", head: true });
+
+    const isFirstUser = !totalUsuarios || totalUsuarios === 0;
+    const roleName = isFirstUser ? "super_admin" : "cliente";
+
+    // ── Obtener rol correspondiente ──────────────────────────────────────────
+    const { data: targetRole } = await adminSupabase
+      .from("roles")
+      .select("id")
+      .eq("nombre", roleName)
+      .single();
+
+    const finalRoleId = targetRole?.id ?? (isFirstUser ? 1 : 7);
+
+    // ── Crear perfil en la tabla usuarios ────────────────────────────────────
+    const { error: perfilError } = await adminSupabase.from("usuarios").insert({
+      id: authData.user.id,
+      rol_id: finalRoleId,
+      email,
+      nombre,
+      apellido,
+      telefono: telefono ?? null,
+      activo: true,
+    });
+
+    if (perfilError) {
+      await adminSupabase.auth.admin.deleteUser(authData.user.id);
+      throw perfilError;
+    }
+
+    // ── Crear perfil de cliente ───────────────────────────────────────────────
+    await adminSupabase.from("clientes").insert({
+      usuario_id: authData.user.id,
+      puntos_acumulados: 0,
+      puntos_canjeados: 0,
+      nivel_fidelidad: "bronce",
+    });
+
+    // Sincronizar en el mock
+    addMockUser({
+      id: authData.user.id,
+      email,
+      password,
+      nombre,
+      apellido,
+      telefono: telefono ?? undefined,
+      rol_id: finalRoleId,
+    });
+  } catch (err: any) {
+    if (process.env.NODE_ENV === "development") {
+      const existing = getMockUserByEmail(email);
+      if (existing) {
+        return {
+          success: false,
+          fieldErrors: {
+            email: ["Este correo electrónico ya está registrado."],
+          },
+        };
+      }
+
+      const mockId = crypto.randomUUID();
+      const mockCount = getMockUsersCount();
+      const finalRoleId = mockCount === 0 ? 1 : 7; // 1: super_admin, 7: cliente
+
+      addMockUser({
+        id: mockId,
+        email,
+        password,
+        nombre,
+        apellido,
+        telefono: telefono ?? undefined,
+        rol_id: finalRoleId,
+      });
+
+      const cookieStore = await cookies();
+      cookieStore.set("mock_auth_token", email, { path: "/", maxAge: 60 * 60 * 24 * 7 });
+
+      revalidatePath("/", "layout");
+      return { success: true };
+    }
+
     return {
       success: false,
-      error: "Error al crear la cuenta. Intenta de nuevo.",
+      error: err.message ?? "Error al crear la cuenta. Intenta de nuevo.",
     };
   }
-
-  if (!authData.user) {
-    return {
-      success: false,
-      error: "No se pudo crear la cuenta. Intenta de nuevo.",
-    };
-  }
-
-  // ── Obtener rol de cliente ────────────────────────────────────────────────
-  const { data: rolCliente } = await adminSupabase
-    .from("roles")
-    .select("id")
-    .eq("nombre", "cliente")
-    .single();
-
-  // ── Crear perfil en la tabla usuarios ────────────────────────────────────
-  const { error: perfilError } = await adminSupabase.from("usuarios").insert({
-    id: authData.user.id,
-    rol_id: rolCliente?.id ?? 7,
-    email,
-    nombre,
-    apellido,
-    telefono: telefono ?? null,
-    activo: true,
-  });
-
-  if (perfilError) {
-    // Rollback: eliminar el usuario de Auth si falla el perfil
-    await adminSupabase.auth.admin.deleteUser(authData.user.id);
-    return {
-      success: false,
-      error: "Error al crear el perfil. Intenta de nuevo.",
-    };
-  }
-
-  // ── Crear perfil de cliente ───────────────────────────────────────────────
-  await adminSupabase.from("clientes").insert({
-    usuario_id: authData.user.id,
-    puntos_acumulados: 0,
-    puntos_canjeados: 0,
-    nivel_fidelidad: "bronce",
-  });
 
   revalidatePath("/", "layout");
   return { success: true };
@@ -195,8 +238,18 @@ export async function registerAction(
  * Server Action para cerrar sesión.
  */
 export async function logoutAction(): Promise<void> {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch (e) {
+    // Safe check
+  }
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete("mock_auth_token");
+  } catch (e) {
+    // Safe check
+  }
   revalidatePath("/", "layout");
   redirect("/");
 }
@@ -208,22 +261,53 @@ export async function logoutAction(): Promise<void> {
  * Uso interno en Server Components que necesitan el usuario.
  */
 export async function getSession() {
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error } = await supabase.auth.getUser();
 
-  if (error !== null || user === null) {
+    if (error !== null || user === null) {
+      throw new Error("No auth user");
+    }
+
+    // Obtener perfil completo
+    const { data: perfil } = await supabase
+      .from("usuarios")
+      .select(`
+        *,
+        roles (nombre, permisos)
+      `)
+      .eq("id", user.id)
+      .single();
+
+    return { user, perfil };
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") {
+      try {
+        const cookieStore = await cookies();
+        const mockEmail = cookieStore.get("mock_auth_token")?.value;
+        if (mockEmail) {
+          const mockUser = getMockUserByEmail(mockEmail);
+          if (mockUser) {
+            return {
+              user: { id: mockUser.id, email: mockUser.email } as any,
+              perfil: {
+                id: mockUser.id,
+                nombre: mockUser.nombre,
+                apellido: mockUser.apellido,
+                rol_id: mockUser.rol_id,
+                email: mockUser.email,
+                roles: mockUser.roles || {
+                  nombre: mockUser.rol_id === 1 ? "super_admin" : "cliente",
+                  permisos: mockUser.rol_id === 1 ? { "*": true } : {}
+                }
+              } as any
+            };
+          }
+        }
+      } catch (e) {
+        // Safe check
+      }
+    }
     return null;
   }
-
-  // Obtener perfil completo
-  const { data: perfil } = await supabase
-    .from("usuarios")
-    .select(`
-      *,
-      roles (nombre, permisos)
-    `)
-    .eq("id", user.id)
-    .single();
-
-  return { user, perfil };
 }

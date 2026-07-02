@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // ─── Data ─────────────────────────────────────────────────────────────────
 
@@ -20,6 +20,7 @@ const TESTIMONIALS = [
     texto: "Las mejores alitas que he probado en mi vida. El sabor mango habanero es una experiencia única. ¡Imposible comer solo unas pocas!",
     orden: "Alitas Mango Habanero × 20",
     avatar: "MG",
+    color: "#ea580c",
   },
   {
     id: 2,
@@ -29,6 +30,7 @@ const TESTIMONIALS = [
     texto: "Pedí el combo familiar para mi cumpleaños y todos quedaron impresionados. La calidad es increíble y el servicio es rápido.",
     orden: "Combo Familiar × 1",
     avatar: "CM",
+    color: "#facc15",
   },
   {
     id: 3,
@@ -38,6 +40,7 @@ const TESTIMONIALS = [
     texto: "El programa de puntos es genial. Ya canjié mis puntos por una orden gratis. ¡Definitivamente mi restaurante favorito!",
     orden: "Alitas BBQ × 12",
     avatar: "AL",
+    color: "#4ade80",
   },
   {
     id: 4,
@@ -47,6 +50,7 @@ const TESTIMONIALS = [
     texto: "El sabor Buffalo es auténtico, picante en su punto. Los nachos supremos son un must. Siempre volvemos con la familia.",
     orden: "Alitas Buffalo × 16",
     avatar: "RS",
+    color: "#22d3ee",
   },
 ] as const;
 
@@ -84,21 +88,62 @@ export function Testimonials() {
   if (!active) return null;
 
   const slideVariants = {
-    enter: (dir: number) => ({
-      x: dir > 0 ? 40 : -40,
-      opacity: 0,
-    }),
+    enter: (dir: number) => ({ x: dir > 0 ? 48 : -48, opacity: 0 }),
     center: { x: 0, opacity: 1 },
-    exit: (dir: number) => ({
-      x: dir > 0 ? -40 : 40,
-      opacity: 0,
-    }),
+    exit:  (dir: number) => ({ x: dir > 0 ? -48 : 48, opacity: 0 }),
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
-      {/* Main testimonial */}
-      <div className="glass-card rounded-3xl p-8 md:p-12 relative min-h-[280px] flex flex-col">
+    <div style={{ maxWidth: "56rem", margin: "0 auto" }}>
+
+      {/* Main card */}
+      <div
+        style={{
+          position: "relative",
+          background: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: "1.75rem",
+          padding: "3rem",
+          backdropFilter: "blur(20px)",
+          overflow: "hidden",
+          minHeight: "320px",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Decorative quote mark */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: "1.5rem",
+            right: "2rem",
+            fontSize: "8rem",
+            lineHeight: 1,
+            color: "rgba(234,88,12,0.08)",
+            fontFamily: "Georgia, serif",
+            fontWeight: 900,
+            userSelect: "none",
+          }}
+        >
+          ❝
+        </div>
+
+        {/* Accent line */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: "2.5rem",
+            width: "60px",
+            height: "3px",
+            background: `linear-gradient(90deg, ${active.color}, transparent)`,
+            borderRadius: "0 0 3px 3px",
+            transition: "background 0.4s ease",
+          }}
+        />
+
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={activeIndex}
@@ -108,55 +153,142 @@ export function Testimonials() {
             animate="center"
             exit="exit"
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="flex-1 flex flex-col"
+            style={{ flex: 1, display: "flex", flexDirection: "column" }}
           >
             {/* Stars */}
-            <div className="flex gap-1 mb-6" aria-label={`Calificación: ${active.rating} de 5 estrellas`}>
+            <div
+              style={{ display: "flex", gap: "4px", marginBottom: "1.5rem" }}
+              aria-label={`Calificación: ${active.rating} de 5 estrellas`}
+            >
               {Array.from({ length: 5 }).map((_, i) => (
-                <Star
+                <svg
                   key={i}
-                  className={`h-5 w-5 ${i < active.rating ? "text-secondary fill-secondary" : "text-gray-muted"}`}
+                  style={{ width: "20px", height: "20px" }}
+                  viewBox="0 0 24 24"
                   aria-hidden="true"
-                />
+                >
+                  <path
+                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                    fill={i < active.rating ? "#facc15" : "none"}
+                    stroke={i < active.rating ? "#facc15" : "rgba(255,255,255,0.15)"}
+                    strokeWidth="1.5"
+                  />
+                </svg>
               ))}
             </div>
 
             {/* Quote */}
-            <blockquote className="text-lg md:text-xl text-white leading-relaxed mb-6 flex-1">
+            <blockquote
+              style={{
+                fontSize: "1.1rem",
+                lineHeight: 1.75,
+                color: "rgba(255,255,255,0.85)",
+                marginBottom: "2rem",
+                flex: 1,
+                fontStyle: "italic",
+              }}
+            >
               &ldquo;{active.texto}&rdquo;
             </blockquote>
 
             {/* Author */}
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-bold text-primary">{active.avatar}</span>
-              </div>
-              <div>
-                <p className="font-semibold text-white font-ui">{active.nombre}</p>
-                <p className="text-sm text-gray-muted">{active.ciudad}</p>
-              </div>
-              <div className="ml-auto">
-                <span className="text-xs text-gray-muted bg-white/5 px-3 py-1.5 rounded-full">
-                  {active.orden}
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+              {/* Avatar */}
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "50%",
+                  background: `linear-gradient(135deg, ${active.color}33, ${active.color}15)`,
+                  border: `1px solid ${active.color}40`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "0.8rem",
+                    fontWeight: 800,
+                    color: active.color,
+                  }}
+                >
+                  {active.avatar}
                 </span>
               </div>
+
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: "0.9rem", fontWeight: 700, color: "#fff", lineHeight: 1.3 }}>
+                  {active.nombre}
+                </p>
+                <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", marginTop: "2px" }}>
+                  {active.ciudad}
+                </p>
+              </div>
+
+              <span
+                style={{
+                  fontSize: "0.7rem",
+                  color: "rgba(255,255,255,0.35)",
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  padding: "4px 12px",
+                  borderRadius: "999px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {active.orden}
+              </span>
             </div>
           </motion.div>
         </AnimatePresence>
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-center gap-6 mt-8">
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "1.5rem",
+          marginTop: "2rem",
+        }}
+      >
+        {/* Prev */}
         <button
           onClick={goPrev}
           aria-label="Testimonio anterior"
-          className="p-2 rounded-full glass border border-white/10 text-gray-muted hover:text-white hover:border-white/20 transition-all"
+          style={{
+            padding: "8px",
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            color: "rgba(255,255,255,0.45)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            const el = e.currentTarget;
+            el.style.background = "rgba(255,255,255,0.08)";
+            el.style.borderColor = "rgba(255,255,255,0.15)";
+            el.style.color = "#fff";
+          }}
+          onMouseLeave={(e) => {
+            const el = e.currentTarget;
+            el.style.background = "rgba(255,255,255,0.04)";
+            el.style.borderColor = "rgba(255,255,255,0.08)";
+            el.style.color = "rgba(255,255,255,0.45)";
+          }}
         >
-          <ChevronLeft className="h-5 w-5" />
+          <ChevronLeft style={{ width: "18px", height: "18px" }} />
         </button>
 
         {/* Dots */}
-        <div className="flex gap-2" role="tablist" aria-label="Testimoniales">
+        <div style={{ display: "flex", gap: "8px" }} role="tablist" aria-label="Testimoniales">
           {TESTIMONIALS.map((_, i) => (
             <button
               key={i}
@@ -164,23 +296,53 @@ export function Testimonials() {
               aria-selected={i === activeIndex}
               aria-label={`Testimonio ${i + 1}`}
               onClick={() => { goTo(i); }}
-              className={`transition-all duration-300 rounded-full ${
-                i === activeIndex
-                  ? "w-8 h-2.5 bg-primary"
-                  : "w-2.5 h-2.5 bg-white/20 hover:bg-white/40"
-              }`}
+              style={{
+                height: "10px",
+                width: i === activeIndex ? "32px" : "10px",
+                borderRadius: "999px",
+                background: i === activeIndex ? active.color : "rgba(255,255,255,0.18)",
+                border: "none",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+                padding: 0,
+              }}
             />
           ))}
         </div>
 
+        {/* Next */}
         <button
           onClick={goNext}
           aria-label="Testimonio siguiente"
-          className="p-2 rounded-full glass border border-white/10 text-gray-muted hover:text-white hover:border-white/20 transition-all"
+          style={{
+            padding: "8px",
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            color: "rgba(255,255,255,0.45)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            const el = e.currentTarget;
+            el.style.background = "rgba(255,255,255,0.08)";
+            el.style.borderColor = "rgba(255,255,255,0.15)";
+            el.style.color = "#fff";
+          }}
+          onMouseLeave={(e) => {
+            const el = e.currentTarget;
+            el.style.background = "rgba(255,255,255,0.04)";
+            el.style.borderColor = "rgba(255,255,255,0.08)";
+            el.style.color = "rgba(255,255,255,0.45)";
+          }}
         >
-          <ChevronRight className="h-5 w-5" />
+          <ChevronRight style={{ width: "18px", height: "18px" }} />
         </button>
       </div>
     </div>
   );
 }
+

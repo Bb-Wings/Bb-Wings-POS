@@ -1,115 +1,270 @@
+'use client'
 /**
  * @fileoverview Auth Layout — BB Wings Management System
- * @description Layout para páginas de autenticación. Fondo oscuro con
- * gradiente animado y marca centrada.
- * @version 1.0.0
+ * @description Layout para páginas de autenticación. Panel decorativo izquierdo
+ * con marca, estadísticas y fondo premium. Panel derecho con formulario.
+ * @version 2.0.0
  */
 
-import type { Metadata } from "next";
 import Link from "next/link";
-import { Flame } from "lucide-react";
+import { Flame, Star, Clock, Users } from "lucide-react";
 
-export const metadata: Metadata = {
-  title: {
-    template: "%s | BB Wings",
-    default: "Autenticación | BB Wings",
-  },
-};
+// ─── Copyright (client-only to avoid hydration mismatch) ─────────────────
 
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function Copyright() {
   return (
-    <div className="min-h-screen flex">
-      {/* Left panel — Decorativo (solo desktop) */}
+    <p style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.25)" }}>
+      © {new Date().getFullYear()} BB Wings. Todos los derechos reservados.
+    </p>
+  );
+}
+
+// ─── Left Panel Stats ─────────────────────────────────────────────────────
+
+const STATS = [
+  { value: "50K+",  label: "Clientes",     icon: <Users  style={{ width: "14px", height: "14px" }} /> },
+  { value: "4.9★", label: "Calificación", icon: <Star   style={{ width: "14px", height: "14px" }} /> },
+  { value: "15+",  label: "Sabores",       icon: <Clock  style={{ width: "14px", height: "14px" }} /> },
+];
+
+// ─── Layout ───────────────────────────────────────────────────────────────
+
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ minHeight: "100vh", display: "flex" }}>
+
+      {/* ── Left Panel — Decorative (desktop only) ── */}
       <div
-        className="hidden lg:flex lg:w-1/2 relative overflow-hidden"
+        className="hidden lg:flex lg:w-1/2"
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          background: "#0d0d0d",
+          flexDirection: "column",
+        }}
         aria-hidden="true"
       >
-        {/* Background */}
-        <div className="absolute inset-0 bg-[#0d0d0d]" />
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              radial-gradient(ellipse 70% 80% at 30% 50%, rgba(214, 31, 44, 0.12) 0%, transparent 60%),
-              radial-gradient(ellipse 50% 60% at 70% 80%, rgba(244, 180, 0, 0.06) 0%, transparent 50%)
-            `,
-          }}
-        />
-
-        {/* Grid pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
-            backgroundSize: "50px 50px",
-          }}
-        />
+        {/* Background blobs */}
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+          {/* Red blob center-left */}
+          <div style={{
+            position: "absolute", top: "20%", left: "-10%",
+            width: "600px", height: "600px", borderRadius: "50%",
+            background: "radial-gradient(ellipse, rgba(214,31,44,0.14) 0%, transparent 65%)",
+          }} />
+          {/* Gold blob bottom-right */}
+          <div style={{
+            position: "absolute", bottom: "10%", right: "-5%",
+            width: "400px", height: "400px", borderRadius: "50%",
+            background: "radial-gradient(ellipse, rgba(244,180,0,0.07) 0%, transparent 65%)",
+          }} />
+          {/* Dots pattern */}
+          <div style={{
+            position: "absolute", inset: 0,
+            backgroundImage: "radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }} />
+          {/* Bottom fade */}
+          <div style={{
+            position: "absolute", bottom: 0, left: 0, right: 0, height: "200px",
+            background: "linear-gradient(to top, #0d0d0d, transparent)",
+          }} />
+        </div>
 
         {/* Content */}
-        <div className="relative z-10 flex flex-col justify-between p-12 w-full">
+        <div
+          style={{
+            position: "relative",
+            zIndex: 10,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            padding: "3rem",
+            width: "100%",
+            height: "100%",
+          }}
+        >
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary">
-              <Flame className="h-5 w-5 text-white" />
+          <Link
+            href="/"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "10px",
+              textDecoration: "none",
+            }}
+          >
+            <div style={{
+              width: "36px", height: "36px", borderRadius: "10px",
+              background: "linear-gradient(135deg, #d61f2c, #ea580c)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+              boxShadow: "0 4px 12px rgba(214,31,44,0.3)",
+            }}>
+              <Flame style={{ width: "18px", height: "18px", color: "#fff" }} />
             </div>
-            <span className="font-display text-2xl text-white tracking-wider">
+            <span style={{
+              fontFamily: "var(--font-display, inherit)",
+              fontSize: "1.35rem",
+              fontWeight: 900,
+              color: "#fff",
+              letterSpacing: "0.12em",
+            }}>
               BB WINGS
             </span>
           </Link>
 
-          {/* Middle content */}
+          {/* Main content */}
           <div>
-            <h2 className="font-display text-6xl text-white leading-none mb-4">
-              EL SABOR
-              <br />
-              <span className="gradient-text-primary">QUE TE VUELA</span>
-            </h2>
-            <p className="text-gray-muted text-lg max-w-sm leading-relaxed">
-              Únete a miles de clientes que disfrutan las mejores alitas de la
-              ciudad con nuestro programa de puntos exclusivo.
-            </p>
+            {/* Heading */}
+            <div style={{ marginBottom: "2rem" }}>
+              <p style={{
+                fontSize: "0.7rem",
+                fontWeight: 700,
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+                color: "#ea580c",
+                marginBottom: "1rem",
+              }}>
+                🔥 El restaurante favorito de la ciudad
+              </p>
+              <h2 style={{
+                fontSize: "clamp(3rem, 5vw, 4.5rem)",
+                lineHeight: 0.92,
+                fontFamily: "var(--font-display, inherit)",
+                fontWeight: 900,
+                color: "#fff",
+                marginBottom: "1.5rem",
+              }}>
+                EL SABOR<br />
+                <span style={{
+                  background: "linear-gradient(135deg, #d61f2c, #ea580c, #f97316)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}>
+                  QUE TE VUELA
+                </span>
+              </h2>
+              <p style={{
+                fontSize: "1rem",
+                lineHeight: 1.7,
+                color: "rgba(255,255,255,0.45)",
+                maxWidth: "340px",
+              }}>
+                Únete a miles de clientes que disfrutan las mejores alitas
+                de la ciudad con nuestro programa de puntos exclusivo.
+              </p>
+            </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 mt-10">
-              {[
-                { value: "50K+",  label: "Clientes" },
-                { value: "4.9★", label: "Calificación" },
-                { value: "15+",  label: "Sabores" },
-              ].map((stat) => (
-                <div key={stat.value} className="glass rounded-xl p-4 border border-white/5 text-center">
-                  <p className="text-2xl font-bold font-heading text-white">{stat.value}</p>
-                  <p className="text-xs text-gray-muted mt-1">{stat.label}</p>
+            {/* Stats grid */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: "0.75rem",
+            }}>
+              {STATS.map((stat) => (
+                <div
+                  key={stat.value}
+                  style={{
+                    padding: "1rem 0.75rem",
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    borderRadius: "1rem",
+                    textAlign: "center",
+                    backdropFilter: "blur(8px)",
+                  }}
+                >
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "#ea580c", marginBottom: "6px",
+                  }}>
+                    {stat.icon}
+                  </div>
+                  <p style={{ fontSize: "1.25rem", fontWeight: 900, color: "#fff", lineHeight: 1, marginBottom: "4px" }}>
+                    {stat.value}
+                  </p>
+                  <p style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.35)", letterSpacing: "0.03em" }}>
+                    {stat.label}
+                  </p>
                 </div>
+              ))}
+            </div>
+
+            {/* Feature list */}
+            <div style={{ marginTop: "1.75rem", display: "flex", flexDirection: "column", gap: "10px" }}>
+              {[
+                "✓ Programa de puntos y recompensas",
+                "✓ Pedidos en línea y seguimiento en tiempo real",
+                "✓ Más de 15 sabores únicos",
+              ].map((item) => (
+                <p key={item} style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)" }}>
+                  {item}
+                </p>
               ))}
             </div>
           </div>
 
           {/* Footer */}
-          <p className="text-xs text-gray-muted">
-            © {new Date().getFullYear()} BB Wings. Todos los derechos reservados.
-          </p>
+          <Copyright />
         </div>
       </div>
 
-      {/* Right panel — Form */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 bg-dark relative">
+      {/* ── Right Panel — Form ── */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem",
+          background: "#0a0a0a",
+          position: "relative",
+        }}
+      >
+        {/* Subtle top-right glow */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: "-80px",
+            right: "-80px",
+            width: "300px",
+            height: "300px",
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(214,31,44,0.05) 0%, transparent 70%)",
+            pointerEvents: "none",
+          }}
+        />
+
         {/* Mobile logo */}
-        <div className="lg:hidden absolute top-6 left-6">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary">
-              <Flame className="h-4 w-4 text-white" />
+        <div
+          className="lg:hidden"
+          style={{ position: "absolute", top: "1.5rem", left: "1.5rem" }}
+        >
+          <Link
+            href="/"
+            style={{ display: "inline-flex", alignItems: "center", gap: "8px", textDecoration: "none" }}
+          >
+            <div style={{
+              width: "32px", height: "32px", borderRadius: "8px",
+              background: "linear-gradient(135deg, #d61f2c, #ea580c)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <Flame style={{ width: "16px", height: "16px", color: "#fff" }} />
             </div>
-            <span className="font-display text-xl text-white tracking-wider">
+            <span style={{
+              fontFamily: "var(--font-display, inherit)",
+              fontSize: "1.1rem", fontWeight: 900, color: "#fff", letterSpacing: "0.1em",
+            }}>
               BB WINGS
             </span>
           </Link>
         </div>
 
-        <div className="w-full max-w-md">
+        {/* Form container */}
+        <div style={{ width: "100%", maxWidth: "420px", position: "relative", zIndex: 1 }}>
           {children}
         </div>
       </div>

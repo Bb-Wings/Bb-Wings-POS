@@ -129,12 +129,102 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const isDisabled = disabled === true || isLoading;
 
+    const getInlineStyle = () => {
+      const baseStyle: React.CSSProperties = {
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "0.5rem",
+        fontWeight: "600",
+        borderRadius: "0.5rem",
+        transition: "all 0.2s ease-out",
+        cursor: isDisabled ? "not-allowed" : "pointer",
+        opacity: isDisabled ? 0.5 : 1,
+        whiteSpace: "nowrap",
+        userSelect: "none",
+        border: "1px solid transparent",
+      };
+
+      if (variant === "primary" || !variant) {
+        baseStyle.backgroundColor = "#D61F2C";
+        baseStyle.color = "#ffffff";
+      } else if (variant === "secondary") {
+        baseStyle.backgroundColor = "#F4B400";
+        baseStyle.color = "#101010";
+      } else if (variant === "outline") {
+        baseStyle.border = "1px solid rgba(214, 31, 44, 0.5)";
+        baseStyle.color = "#D61F2C";
+        baseStyle.backgroundColor = "transparent";
+      } else if (variant === "ghost") {
+        baseStyle.backgroundColor = "transparent";
+        baseStyle.color = "#9ca3af";
+      } else if (variant === "destructive") {
+        baseStyle.backgroundColor = "#C62828";
+        baseStyle.color = "#ffffff";
+      } else if (variant === "glass") {
+        baseStyle.backgroundColor = "rgba(30, 30, 30, 0.6)";
+        baseStyle.backdropFilter = "blur(16px)";
+        baseStyle.border = "1px solid rgba(255, 255, 255, 0.1)";
+        baseStyle.color = "#ffffff";
+      } else if (variant === "link") {
+        baseStyle.backgroundColor = "transparent";
+        baseStyle.color = "#D61F2C";
+        baseStyle.textDecoration = "underline";
+      }
+
+      if (size === "xs") {
+        baseStyle.height = "1.75rem";
+        baseStyle.paddingLeft = "0.625rem";
+        baseStyle.paddingRight = "0.625rem";
+        baseStyle.fontSize = "0.75rem";
+      } else if (size === "sm") {
+        baseStyle.height = "2rem";
+        baseStyle.paddingLeft = "0.75rem";
+        baseStyle.paddingRight = "0.75rem";
+        baseStyle.fontSize = "0.875rem";
+      } else if (size === "lg") {
+        baseStyle.height = "2.75rem";
+        baseStyle.paddingLeft = "1.25rem";
+        baseStyle.paddingRight = "1.25rem";
+        baseStyle.fontSize = "1rem";
+      } else if (size === "xl") {
+        baseStyle.height = "3.25rem";
+        baseStyle.paddingLeft = "1.75rem";
+        baseStyle.paddingRight = "1.75rem";
+        baseStyle.fontSize = "1.125rem";
+      } else if (size === "icon") {
+        baseStyle.height = "2.25rem";
+        baseStyle.width = "2.25rem";
+        baseStyle.padding = "0";
+      } else if (size === "icon-sm") {
+        baseStyle.height = "2rem";
+        baseStyle.width = "2rem";
+        baseStyle.padding = "0";
+      } else if (size === "icon-lg") {
+        baseStyle.height = "2.75rem";
+        baseStyle.width = "2.75rem";
+        baseStyle.padding = "0";
+      } else {
+        baseStyle.height = "2.5rem";
+        baseStyle.paddingLeft = "1rem";
+        baseStyle.paddingRight = "1rem";
+        baseStyle.fontSize = "0.875rem";
+      }
+
+      if (fullWidth) {
+        baseStyle.width = "100%";
+      }
+
+      return baseStyle;
+    };
+
     return (
       <button
         ref={ref}
         className={cn(buttonVariants({ variant, size, fullWidth, className }))}
         disabled={isDisabled}
         aria-busy={isLoading}
+        style={{ ...getInlineStyle(), ...props.style }}
         {...props}
       >
         {isLoading ? (

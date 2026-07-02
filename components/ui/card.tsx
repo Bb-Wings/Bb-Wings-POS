@@ -153,55 +153,103 @@ export function StatCard({
   iconColor = "primary",
   className,
 }: StatCardProps) {
-  const iconBgColors = {
-    primary:   "bg-primary/10 text-primary",
-    secondary: "bg-secondary/10 text-secondary",
-    success:   "bg-success/10 text-success",
-    warning:   "bg-warning/10 text-warning",
-    danger:    "bg-danger/10 text-danger",
+  const iconColorValues = {
+    primary:   { bg: "rgba(234, 88, 12, 0.12)", border: "rgba(234, 88, 12, 0.25)", color: "#ea580c" },
+    secondary: { bg: "rgba(168, 85, 247, 0.12)", border: "rgba(168, 85, 247, 0.25)", color: "#a855f7" },
+    success:   { bg: "rgba(34, 197, 94, 0.12)", border: "rgba(34, 197, 94, 0.25)", color: "#22c55e" },
+    warning:   { bg: "rgba(234, 179, 8, 0.12)", border: "rgba(234, 179, 8, 0.25)", color: "#eab308" },
+    danger:    { bg: "rgba(239, 68, 68, 0.12)", border: "rgba(239, 68, 68, 0.25)", color: "#ef4444" },
   };
 
+  const styleColors = iconColorValues[iconColor] || iconColorValues.primary;
   const isPositive = change !== undefined && change > 0;
   const isNegative = change !== undefined && change < 0;
 
   return (
-    <Card className={cn("glass-card", className)} padding="md">
-      <div className="flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-muted font-ui">{title}</p>
-          <p className="mt-1 text-2xl font-bold text-white font-heading truncate">
-            {value}
-          </p>
-          {change !== undefined && (
-            <div className="mt-2 flex items-center gap-1">
-              <span
-                className={cn(
-                  "text-xs font-semibold",
-                  isPositive && "text-success",
-                  isNegative && "text-danger",
-                  !isPositive && !isNegative && "text-gray-muted"
-                )}
-              >
-                {isPositive && "+"}
-                {change.toFixed(1)}%
+    <div
+      style={{
+        background: "linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: "1.25rem",
+        padding: "1.5rem",
+        backdropFilter: "blur(12px)",
+        position: "relative",
+        overflow: "hidden",
+        boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+      }}
+      className={className}
+    >
+      {/* Background glow orb */}
+      <div
+        style={{
+          position: "absolute",
+          top: "-40px",
+          right: "-40px",
+          width: "120px",
+          height: "120px",
+          borderRadius: "50%",
+          background: `radial-gradient(circle, ${styleColors.color}15 0%, transparent 70%)`,
+          pointerEvents: "none",
+        }}
+      />
+
+      <div style={{ flex: 1, minWidth: 0, position: "relative", zIndex: 1 }}>
+        <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>
+          {title}
+        </p>
+        <p style={{ fontSize: "1.8rem", fontWeight: 800, color: "#fff", margin: "6px 0 0", lineHeight: 1.1, fontFamily: "var(--font-heading, inherit)" }}>
+          {value}
+        </p>
+        
+        {change !== undefined && (
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "10px" }}>
+            <span
+              style={{
+                fontSize: "0.72rem",
+                fontWeight: 700,
+                color: isPositive ? "#22c55e" : isNegative ? "#ef4444" : "rgba(255,255,255,0.4)",
+                background: isPositive ? "rgba(34,197,94,0.08)" : isNegative ? "rgba(239,68,68,0.08)" : "rgba(255,255,255,0.04)",
+                padding: "2px 8px",
+                borderRadius: "6px",
+                border: isPositive ? "1px solid rgba(34,197,94,0.15)" : isNegative ? "1px solid rgba(239,68,68,0.15)" : "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
+              {isPositive && "+"}
+              {change.toFixed(1)}%
+            </span>
+            {changeLabel !== undefined && (
+              <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.3)" }}>
+                {changeLabel}
               </span>
-              {changeLabel !== undefined && (
-                <span className="text-xs text-gray-muted">{changeLabel}</span>
-              )}
-            </div>
-          )}
-        </div>
-        {icon !== undefined && (
-          <div
-            className={cn(
-              "flex-shrink-0 p-3 rounded-xl",
-              iconBgColors[iconColor]
             )}
-          >
-            {icon}
           </div>
         )}
       </div>
-    </Card>
+
+      {icon !== undefined && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "44px",
+            height: "44px",
+            borderRadius: "12px",
+            background: styleColors.bg,
+            border: `1px solid ${styleColors.border}`,
+            color: styleColors.color,
+            flexShrink: 0,
+            position: "relative",
+            zIndex: 1,
+            boxShadow: `0 4px 12px ${styleColors.color}15`,
+          }}
+        >
+          {icon}
+        </div>
+      )}
+    </div>
   );
 }

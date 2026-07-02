@@ -142,20 +142,51 @@ export function Navbar() {
 
               {/* Auth section */}
               {isAuthenticated && user !== null ? (
-                <div className="relative hidden md:block">
+                <div style={{ position: "relative" }} className="hidden md:block">
                   <button
                     onClick={() => { setIsUserMenuOpen((prev) => !prev); }}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg glass hover:bg-white/10 transition-all duration-200"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "6px 12px",
+                      borderRadius: "10px",
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      color: "#fff",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      const el = e.currentTarget;
+                      el.style.background = "rgba(255,255,255,0.08)";
+                      el.style.borderColor = "rgba(255,255,255,0.15)";
+                    }}
+                    onMouseLeave={(e) => {
+                      const el = e.currentTarget;
+                      el.style.background = "rgba(255,255,255,0.04)";
+                      el.style.borderColor = "rgba(255,255,255,0.08)";
+                    }}
                     aria-expanded={isUserMenuOpen}
                     aria-haspopup="menu"
                     id="user-menu-button"
                   >
-                    <div className="h-7 w-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-primary">
+                    <div style={{
+                      width: "26px",
+                      height: "26px",
+                      borderRadius: "50%",
+                      background: "linear-gradient(135deg, rgba(234,88,12,0.3), rgba(214,31,44,0.2))",
+                      border: "1px solid rgba(234,88,12,0.3)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}>
+                      <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "#f97316" }}>
                         {user.nombre.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <span className="text-sm font-medium text-white max-w-[100px] truncate">
+                    <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#fff", maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {user.nombre}
                     </span>
                   </button>
@@ -176,49 +207,98 @@ export function Navbar() {
                           transition={{ duration: 0.15 }}
                           role="menu"
                           aria-labelledby="user-menu-button"
-                          className="absolute right-0 top-full mt-2 w-52 glass-strong border border-white/10 rounded-xl shadow-glass z-20 overflow-hidden py-1"
+                          style={{
+                            position: "absolute",
+                            right: 0,
+                            top: "calc(100% + 8px)",
+                            width: "210px",
+                            background: "rgba(18,18,18,0.97)",
+                            backdropFilter: "blur(24px)",
+                            border: "1px solid rgba(255,255,255,0.09)",
+                            borderRadius: "14px",
+                            boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+                            zIndex: 1040,
+                            overflow: "hidden",
+                            padding: "6px",
+                          }}
                         >
-                          <div className="px-4 py-3 border-b border-white/5">
-                            <p className="text-xs font-medium text-gray-muted">Conectado como</p>
-                            <p className="text-sm font-semibold text-white truncate">
+                          <div style={{ padding: "8px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)", marginBottom: "4px" }}>
+                            <p style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.35)", fontWeight: 550, textTransform: "uppercase", letterSpacing: "0.02em" }}>Conectado como</p>
+                            <p style={{ fontSize: "0.82rem", fontWeight: 700, color: "#fff", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {user.nombre} {user.apellido}
                             </p>
                           </div>
 
                           {[
-                            { href: "/perfil", icon: <User className="h-4 w-4" />, label: "Mi Perfil" },
-                            { href: "/pedidos", icon: <ClipboardList className="h-4 w-4" />, label: "Mis Pedidos" },
-                            ...(isAdmin ? [{ href: "/admin/dashboard", icon: <LayoutDashboard className="h-4 w-4" />, label: "Panel Admin" }] : []),
-                            ...(user.rol === "cajero" ? [{ href: "/pos", icon: <ChefHat className="h-4 w-4" />, label: "POS" }] : []),
+                            { href: "/perfil", icon: <User style={{ width: "14px", height: "14px" }} />, label: "Mi Perfil" },
+                            { href: "/pedidos", icon: <ClipboardList style={{ width: "14px", height: "14px" }} />, label: "Mis Pedidos" },
+                            ...(isAdmin ? [{ href: "/admin/dashboard", icon: <LayoutDashboard style={{ width: "14px", height: "14px" }} />, label: "Panel Admin" }] : []),
+                            ...(user.rol === "cajero" ? [{ href: "/pos", icon: <ChefHat style={{ width: "14px", height: "14px" }} />, label: "POS" }] : []),
                           ].map(({ href, icon, label }) => (
                             <Link
                               key={href}
                               href={href}
                               role="menuitem"
-                              className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-muted hover:text-white hover:bg-white/5 transition-colors"
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                padding: "8px 12px",
+                                borderRadius: "8px",
+                                fontSize: "0.82rem",
+                                color: "rgba(255,255,255,0.55)",
+                                textDecoration: "none",
+                                transition: "all 0.15s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                const el = e.currentTarget as HTMLElement;
+                                el.style.background = "rgba(255,255,255,0.06)";
+                                el.style.color = "#fff";
+                              }}
+                              onMouseLeave={(e) => {
+                                const el = e.currentTarget as HTMLElement;
+                                el.style.background = "transparent";
+                                el.style.color = "rgba(255,255,255,0.55)";
+                              }}
                             >
                               {icon}
                               {label}
                             </Link>
                           ))}
 
-                          <div className="border-t border-white/5 mt-1 pt-1">
-                            <button
-                              onClick={handleLogout}
-                              role="menuitem"
-                              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-danger hover:bg-danger/10 transition-colors"
-                            >
-                              <LogOut className="h-4 w-4" />
-                              Cerrar Sesión
-                            </button>
-                          </div>
+                          <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", margin: "4px 0" }} />
+
+                          <button
+                            onClick={handleLogout}
+                            role="menuitem"
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              width: "100%",
+                              padding: "8px 12px",
+                              borderRadius: "8px",
+                              fontSize: "0.82rem",
+                              color: "#f87171",
+                              background: "transparent",
+                              border: "none",
+                              cursor: "pointer",
+                              textAlign: "left",
+                              transition: "background 0.15s ease",
+                            }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(220,38,38,0.08)"; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                          >
+                            <LogOut style={{ width: "14px", height: "14px" }} />
+                            Cerrar Sesión
+                          </button>
                         </motion.div>
                       </>
                     )}
                   </AnimatePresence>
                 </div>
               ) : (
-                <div className="hidden md:flex items-center gap-2">
+                <div className="hidden md:flex items-center gap-2" style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                   <Button
                     variant="ghost"
                     size="sm"

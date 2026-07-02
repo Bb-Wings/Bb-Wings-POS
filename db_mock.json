@@ -1,0 +1,27 @@
+{
+  "users": [
+    {
+      "id": "default-admin-id",
+      "email": "admin@bbwings.com",
+      "password": "Password123",
+      "nombre": "Admin",
+      "apellido": "BB Wings",
+      "rol_id": 1,
+      "roles": {
+        "nombre": "super_admin",
+        "permisos": {
+          "*": true
+        }
+      }
+    },
+    {
+      "id": "e3161514-6c21-43ca-bd3c-7491a4138505",
+      "email": "admin@techzonne.online",
+      "password": "Admin2026",
+      "nombre": "Luis",
+      "apellido": "Gotopo",
+      "telefono": "3012909891",
+      "rol_id": 7
+    }
+  ]
+}

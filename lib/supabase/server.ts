@@ -113,30 +113,63 @@ export async function getAuthenticatedUser() {
   return user;
 }
 
+import { getMockUserByEmail } from "./mockDb";
+
 /**
  * Obtiene el usuario autenticado con su perfil completo de la base de datos.
  * Lanza un error si el usuario no está autenticado.
  */
 export async function getAuthenticatedUserWithProfile() {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  if (authError !== null || user === null) {
+    if (authError !== null || user === null) {
+      throw new Error("No auth user");
+    }
+
+    const { data: perfil, error: perfilError } = await supabase
+      .from("usuarios")
+      .select(`
+        *,
+        roles (*)
+      `)
+      .eq("id", user.id)
+      .single();
+
+    if (perfilError !== null || perfil === null) {
+      throw new Error("No user profile");
+    }
+
+    return { auth: user, perfil: perfil as any };
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") {
+      try {
+        const cookieStore = await cookies();
+        const mockEmail = cookieStore.get("mock_auth_token")?.value;
+        if (mockEmail) {
+          const mockUser = getMockUserByEmail(mockEmail);
+          if (mockUser) {
+            return {
+              auth: { id: mockUser.id, email: mockUser.email } as any,
+              perfil: {
+                id: mockUser.id,
+                nombre: mockUser.nombre,
+                apellido: mockUser.apellido,
+                rol_id: mockUser.rol_id,
+                email: mockUser.email,
+                roles: mockUser.roles || {
+                  nombre: mockUser.rol_id === 1 ? "super_admin" : "cliente",
+                  permisos: mockUser.rol_id === 1 ? { "*": true } : {}
+                }
+              } as any
+            };
+          }
+        }
+      } catch (e) {
+        // Safe check
+      }
+    }
     return null;
   }
-
-  const { data: perfil, error: perfilError } = await supabase
-    .from("usuarios")
-    .select(`
-      *,
-      roles (*)
-    `)
-    .eq("id", user.id)
-    .single();
-
-  if (perfilError !== null || perfil === null) {
-    return null;
-  }
-
-  return { auth: user, perfil: perfil as any };
 }

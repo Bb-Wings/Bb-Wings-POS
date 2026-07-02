@@ -135,6 +135,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               sizeClasses[size],
               className
             )}
+            style={{
+              paddingLeft: leftIcon !== undefined ? "2.5rem" : "0.875rem",
+              paddingRight: (rightElement !== undefined || isPassword) ? "2.5rem" : "0.875rem",
+            }}
             {...props}
           />
 

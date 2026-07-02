@@ -16,7 +16,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { StatCard, Card, CardHeader, CardContent } from "@/components/ui/card";
+import { StatCard, Card } from "@/components/ui/card";
 import { StatCardSkeleton, TableRowSkeleton } from "@/components/ui/skeleton";
 import { OrderStatusBadge } from "@/components/ui/badge";
 import { SalesChart } from "@/components/admin/charts/sales-chart";
@@ -128,7 +128,7 @@ async function StatsSection() {
   const stats = await getDashboardStats();
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" style={{ gap: "2rem" }}>
       <StatCard
         title="Ventas de Hoy"
         value={formatCurrency(stats.ventasHoy)}
@@ -167,90 +167,129 @@ async function RecentOrdersTable() {
   const orders = await getRecentOrders();
 
   return (
-    <Card variant="elevated" padding="none">
-      <CardHeader
-        className="px-5 pt-5"
-        title="Pedidos Recientes"
-        description="Los últimos 8 pedidos del sistema"
-        action={
-          <a
-            href="/admin/pedidos"
-            className="text-xs text-primary hover:text-primary-400 font-medium transition-colors"
-          >
-            Ver todos →
-          </a>
+    <div
+      style={{
+        background: "linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: "1.25rem",
+        padding: "1.5rem",
+        backdropFilter: "blur(12px)",
+        boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+      }}
+    >
+      <style dangerouslySetInnerHTML={{__html: `
+        .recent-orders-link {
+          color: #f97316;
+          text-decoration: none;
+          font-weight: 700;
+          font-size: 0.72rem;
+          transition: color 0.2s ease;
         }
-      />
-      <CardContent className="pt-0">
-        <div className="overflow-x-auto">
-          <table className="w-full" aria-label="Pedidos recientes">
-            <thead>
-              <tr className="border-b border-card-border">
-                {["Pedido", "Cliente", "Tipo", "Estado", "Total", "Tiempo"].map((h) => (
-                  <th
-                    key={h}
-                    scope="col"
-                    className="px-5 py-3 text-left text-xs font-semibold text-gray-muted uppercase tracking-wider"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {orders.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-sm text-gray-muted">
-                    No hay pedidos recientes
-                  </td>
-                </tr>
-              ) : (
-                orders.map((order: any) => {
-                  const clienteData = order.clientes;
-                  const usuarioData = clienteData && typeof clienteData === "object" && !Array.isArray(clienteData)
-                    ? (clienteData as { usuarios: { nombre: string; apellido: string } | null }).usuarios
-                    : null;
+        .recent-orders-link:hover {
+          color: #fb923c !important;
+        }
+        .recent-orders-row {
+          border-bottom: 1px solid rgba(255,255,255,0.04);
+          transition: background 0.2s ease;
+        }
+        .recent-orders-row:hover {
+          background: rgba(255,255,255,0.01) !important;
+        }
+      `}} />
 
-                  return (
-                    <tr
-                      key={order.id}
-                      className="border-b border-card-border/50 hover:bg-white/2 transition-colors"
-                    >
-                      <td className="px-5 py-3.5 text-sm font-mono text-primary">
-                        {formatOrderNumber(order.id)}
-                      </td>
-                      <td className="px-5 py-3.5 text-sm text-white">
-                        {usuarioData
-                          ? `${usuarioData.nombre} ${usuarioData.apellido}`
-                          : "Invitado"}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span className="text-xs text-gray-muted capitalize">
-                          {order.tipo.replace("_", " ")}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <OrderStatusBadge
-                          status={order.estado as Parameters<typeof OrderStatusBadge>[0]["status"]}
-                          size="sm"
-                        />
-                      </td>
-                      <td className="px-5 py-3.5 text-sm font-semibold text-white">
-                        {formatCurrency(order.total)}
-                      </td>
-                      <td className="px-5 py-3.5 text-xs text-gray-muted flex items-center gap-1">
-                        <Clock className="h-3 w-3" aria-hidden="true" />
-                        {formatRelativeTime(order.created_at)}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.25rem" }}>
+        <div>
+          <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#fff", margin: 0, fontFamily: "var(--font-heading, inherit)" }}>
+            Pedidos Recientes
+          </h3>
+          <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", margin: "4px 0 0" }}>
+            Los últimos 8 pedidos del sistema
+          </p>
         </div>
-      </CardContent>
-    </Card>
+        <a
+          href="/admin/pedidos"
+          className="recent-orders-link"
+        >
+          Ver todos →
+        </a>
+      </div>
+
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }} aria-label="Pedidos recientes">
+          <thead>
+            <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              {["Pedido", "Cliente", "Tipo", "Estado", "Total", "Tiempo"].map((h) => (
+                <th
+                  key={h}
+                  scope="col"
+                  style={{
+                    padding: "10px 16px",
+                    textAlign: "left",
+                    fontSize: "0.7rem",
+                    fontWeight: 700,
+                    color: "rgba(255,255,255,0.4)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em"
+                  }}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {orders.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ padding: "30px 16px", textAlign: "center", fontSize: "0.85rem", color: "rgba(255,255,255,0.4)" }}>
+                  No hay pedidos recientes
+                </td>
+              </tr>
+            ) : (
+              orders.map((order: any) => {
+                const clienteData = order.clientes;
+                const usuarioData = clienteData && typeof clienteData === "object" && !Array.isArray(clienteData)
+                  ? (clienteData as { usuarios: { nombre: string; apellido: string } | null }).usuarios
+                  : null;
+
+                return (
+                  <tr
+                    key={order.id}
+                    className="recent-orders-row"
+                  >
+                    <td style={{ padding: "12px 16px", fontSize: "0.85rem", fontFamily: "monospace", color: "#f97316", fontWeight: 700 }}>
+                      {formatOrderNumber(order.id)}
+                    </td>
+                    <td style={{ padding: "12px 16px", fontSize: "0.85rem", color: "#fff", fontWeight: 500 }}>
+                      {usuarioData
+                        ? `${usuarioData.nombre} ${usuarioData.apellido}`
+                        : "Invitado"}
+                    </td>
+                    <td style={{ padding: "12px 16px", fontSize: "0.82rem", color: "rgba(255,255,255,0.45)", textTransform: "capitalize" }}>
+                      {order.tipo.replace("_", " ")}
+                    </td>
+                    <td style={{ padding: "12px 16px" }}>
+                      <OrderStatusBadge
+                        status={order.estado as Parameters<typeof OrderStatusBadge>[0]["status"]}
+                        size="sm"
+                      />
+                    </td>
+                    <td style={{ padding: "12px 16px", fontSize: "0.85rem", fontWeight: 700, color: "#fff" }}>
+                      {formatCurrency(order.total)}
+                    </td>
+                    <td style={{ padding: "12px 16px", fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                        <Clock style={{ width: "12px", height: "12px" }} aria-hidden="true" />
+                        {formatRelativeTime(order.created_at)}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
@@ -258,11 +297,11 @@ async function RecentOrdersTable() {
 
 export default function AdminDashboardPage() {
   return (
-    <div className="space-y-8">
+    <div style={{ display: "flex", flexDirection: "column", gap: "2.5rem" }}>
       {/* Page header */}
       <div>
-        <h1 className="font-heading text-3xl font-bold text-white">Dashboard</h1>
-        <p className="text-gray-muted mt-1">
+        <h1 style={{ fontSize: "1.875rem", fontWeight: 700, color: "#fff", margin: 0, fontFamily: "var(--font-heading, inherit)" }}>Dashboard</h1>
+        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.875rem", marginTop: "4px" }}>
           Resumen general del negocio en tiempo real
         </p>
       </div>
@@ -270,7 +309,7 @@ export default function AdminDashboardPage() {
       {/* KPI Stats */}
       <Suspense
         fallback={
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" style={{ gap: "2rem" }}>
             {Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)}
           </div>
         }
@@ -279,36 +318,69 @@ export default function AdminDashboardPage() {
       </Suspense>
 
       {/* Charts & Orders */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3" style={{ gap: "2rem" }}>
         {/* Sales chart — spans 2 columns */}
         <div className="xl:col-span-2">
           <SalesChart />
         </div>
 
         {/* Quick stats */}
-        <Card variant="elevated">
-          <CardHeader
-            title="Métricas Rápidas"
-            description="Estado del negocio hoy"
-          />
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                { label: "Tiempo promedio de entrega", value: "24 min", icon: <Clock className="h-4 w-4 text-primary" /> },
-                { label: "Satisfacción del cliente", value: "4.8/5", icon: <TrendingUp className="h-4 w-4 text-success" /> },
-                { label: "Tasa de cancelación", value: "2.1%", icon: <AlertTriangle className="h-4 w-4 text-warning" /> },
-              ].map(({ label, value, icon }) => (
-                <div key={label} className="flex items-center justify-between py-2 border-b border-card-border/50 last:border-0">
-                  <div className="flex items-center gap-2.5">
+        <div
+          style={{
+            background: "linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))",
+            border: "1px solid rgba(255,255,255,0.06)",
+            borderRadius: "1.25rem",
+            padding: "1.5rem",
+            backdropFilter: "blur(12px)",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+          }}
+        >
+          <div style={{ marginBottom: "1.25rem" }}>
+            <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#fff", margin: 0, fontFamily: "var(--font-heading, inherit)" }}>
+              Métricas Rápidas
+            </h3>
+            <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.4)", margin: "4px 0 0" }}>
+              Estado del negocio hoy
+            </p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            {[
+              { label: "Tiempo de entrega", value: "24 min", icon: <Clock style={{ width: "15px", height: "15px", color: "#f97316" }} /> },
+              { label: "Satisfacción cliente", value: "4.8/5", icon: <TrendingUp style={{ width: "15px", height: "15px", color: "#22c55e" }} /> },
+              { label: "Tasa cancelación", value: "2.1%", icon: <AlertTriangle style={{ width: "15px", height: "15px", color: "#eab308" }} /> },
+            ].map(({ label, value, icon }) => (
+              <div
+                key={label}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingBottom: "12px",
+                  borderBottom: "1px solid rgba(255,255,255,0.04)"
+                }}
+                className="last:border-0 pb-0"
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "8px",
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.05)"
+                  }}>
                     {icon}
-                    <span className="text-sm text-gray-muted">{label}</span>
                   </div>
-                  <span className="text-sm font-bold text-white">{value}</span>
+                  <span style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.45)" }}>{label}</span>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#fff" }}>{value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Recent orders */}

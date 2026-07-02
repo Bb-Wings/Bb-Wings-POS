@@ -11,6 +11,7 @@ import { HeroSection } from "@/components/landing/hero-section";
 import { PromotionsSection } from "@/components/landing/promotions-section";
 import { MenuPreview } from "@/components/landing/menu-preview";
 import { Testimonials } from "@/components/landing/testimonials";
+import { LoyaltySection } from "@/components/landing/loyalty-section";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { createClient } from "@/lib/supabase/server";
@@ -79,23 +80,24 @@ export default function HomePage() {
         <section
           id="promociones"
           aria-labelledby="promociones-title"
-          className="py-20 bg-dark"
+          className="py-28 bg-dark"
         >
           <div className="container-app">
-            <div className="text-center mb-12">
+            <div className="text-center mb-16">
+              <span className="inline-block text-primary font-ui text-sm font-semibold tracking-widest uppercase mb-4">🔥 Ofertas Activas</span>
               <h2
                 id="promociones-title"
-                className="font-display text-5xl text-white mb-3"
+                className="font-display text-5xl md:text-6xl text-white mb-4"
               >
                 PROMOCIONES
               </h2>
-              <p className="text-gray-muted text-lg">
+              <p className="text-gray-muted text-lg max-w-xl mx-auto">
                 Ofertas especiales que no querrás perderte
               </p>
             </div>
             <Suspense
               fallback={
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                   {Array.from({ length: 4 }).map((_, i) => (
                     <ProductCardSkeleton key={i} />
                   ))}
@@ -111,23 +113,24 @@ export default function HomePage() {
         <section
           id="menu"
           aria-labelledby="menu-title"
-          className="py-20 bg-[#0d0d0d]"
+          className="py-28 bg-[#0d0d0d]"
         >
           <div className="container-app">
-            <div className="text-center mb-12">
+            <div className="text-center mb-16">
+              <span className="inline-block text-secondary font-ui text-sm font-semibold tracking-widest uppercase mb-4">🍗 Lo más pedido</span>
               <h2
                 id="menu-title"
-                className="font-display text-5xl text-white mb-3"
+                className="font-display text-5xl md:text-6xl text-white mb-4"
               >
                 NUESTRO MENÚ
               </h2>
-              <p className="text-gray-muted text-lg">
+              <p className="text-gray-muted text-lg max-w-xl mx-auto">
                 Los sabores más populares de BB Wings
               </p>
             </div>
             <Suspense
               fallback={
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                   {Array.from({ length: 8 }).map((_, i) => (
                     <ProductCardSkeleton key={i} />
                   ))}
@@ -140,73 +143,24 @@ export default function HomePage() {
         </section>
 
         {/* Programa de Puntos */}
-        <section
-          id="programa-puntos"
-          aria-labelledby="puntos-title"
-          className="py-20 gradient-hero relative overflow-hidden"
-        >
-          <div
-            className="absolute inset-0 pointer-events-none"
-            aria-hidden="true"
-          >
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
-          </div>
-          <div className="container-app relative z-10">
-            <div className="max-w-4xl mx-auto text-center">
-              <h2
-                id="puntos-title"
-                className="font-display text-5xl md:text-7xl text-white mb-6"
-              >
-                PROGRAMA DE{" "}
-                <span className="gradient-text-primary">PUNTOS</span>
-              </h2>
-              <p className="text-gray-muted text-xl mb-10 max-w-2xl mx-auto">
-                Acumula puntos en cada pedido y canjéalos por productos gratis,
-                descuentos exclusivos y experiencias únicas.
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
-                {[
-                  { nivel: "🥉 Bronce", desc: "Gana 1pt por $10", color: "text-amber-500" },
-                  { nivel: "🥈 Plata", desc: "Gana 2pts por $10", color: "text-gray-300" },
-                  { nivel: "🥇 Oro", desc: "Gana 3pts por $10", color: "text-yellow-400" },
-                  { nivel: "💎 Platino", desc: "Gana 5pts por $10", color: "text-cyan-400" },
-                ].map((item) => (
-                  <div
-                    key={item.nivel}
-                    className="glass-card rounded-2xl p-5 text-center"
-                  >
-                    <p className={`text-lg font-bold font-heading ${item.color}`}>
-                      {item.nivel}
-                    </p>
-                    <p className="text-sm text-gray-muted mt-1">{item.desc}</p>
-                  </div>
-                ))}
-              </div>
-              <a
-                href="/register"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl gradient-primary text-white font-bold font-ui text-lg hover:shadow-glow-primary transition-all duration-300 hover:-translate-y-0.5"
-              >
-                ¡Únete Gratis!
-              </a>
-            </div>
-          </div>
-        </section>
+        <LoyaltySection />
 
         {/* Testimonials */}
         <section
           id="testimoniales"
           aria-labelledby="testimoniales-title"
-          className="py-20 bg-dark"
+          className="py-28 bg-dark"
         >
           <div className="container-app">
-            <div className="text-center mb-12">
+            <div className="text-center mb-16">
+              <span className="inline-block text-primary font-ui text-sm font-semibold tracking-widest uppercase mb-4">💬 Opiniones reales</span>
               <h2
                 id="testimoniales-title"
-                className="font-display text-5xl text-white mb-3"
+                className="font-display text-5xl md:text-6xl text-white mb-4"
               >
                 LO QUE DICEN
               </h2>
-              <p className="text-gray-muted text-lg">
+              <p className="text-gray-muted text-lg max-w-xl mx-auto">
                 Miles de clientes felices nos respaldan
               </p>
             </div>
