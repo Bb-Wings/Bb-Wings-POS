@@ -1,0 +1,110 @@
+{
+  "compilerOptions": {
+    /* ── Language & Environment ──────────────────────────────────────── */
+    "target": "ES2022",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "jsx": "react-jsx",
+    /* ── Module System ───────────────────────────────────────────────── */
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    /* ── Emit ─────────────────────────────────────────────────────────── */
+    "noEmit": true,
+    /* ── Type Checking ────────────────────────────────────────────────── */
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictPropertyInitialization": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    /* ── JavaScript Support ───────────────────────────────────────────── */
+    "allowJs": true,
+    "checkJs": false,
+    /* ── Interop ──────────────────────────────────────────────────────── */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    /* ── Plugins ──────────────────────────────────────────────────────── */
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    /* ── Path Aliases ─────────────────────────────────────────────────── */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@/app/*": [
+        "./app/*"
+      ],
+      "@/components/*": [
+        "./components/*"
+      ],
+      "@/components/ui/*": [
+        "./components/ui/*"
+      ],
+      "@/components/layout/*": [
+        "./components/layout/*"
+      ],
+      "@/lib/*": [
+        "./lib/*"
+      ],
+      "@/lib/supabase/*": [
+        "./lib/supabase/*"
+      ],
+      "@/lib/store/*": [
+        "./lib/store/*"
+      ],
+      "@/lib/hooks/*": [
+        "./lib/hooks/*"
+      ],
+      "@/lib/actions/*": [
+        "./lib/actions/*"
+      ],
+      "@/lib/validations/*": [
+        "./lib/validations/*"
+      ],
+      "@/lib/utils/*": [
+        "./lib/utils/*"
+      ],
+      "@/lib/api/*": [
+        "./lib/api/*"
+      ],
+      "@/types/*": [
+        "./types/*"
+      ],
+      "@/public/*": [
+        "./public/*"
+      ]
+    },
+    "skipLibCheck": true,
+    "incremental": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "out",
+    "dist"
+  ]
+}
