@@ -7,11 +7,11 @@ import nodemailer from "nodemailer";
  */
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: parseInt(process.env.SMTP_PORT || "2525", 10),
-  secure: false, // true for 465, false for other ports (like 2525)
+  host: process.env.SMTP_HOST || "",
+  port: parseInt(process.env.SMTP_PORT || "587", 10),
+  secure: false, // true for 465, false for other ports (like 587)
   auth: {
-    user: process.env.SMTP_USER || "bbwings@mail.techzonne.online",
+    user: process.env.SMTP_USER || "",
     pass: process.env.SMTP_PASS || "",
   },
   tls: {
@@ -27,16 +27,16 @@ interface SendEmailParams {
 
 export async function sendEmail({ to, subject, html }: SendEmailParams) {
   const mailOptions = {
-    from: `"BB Wings Support" <${process.env.SMTP_USER || "bbwings@mail.techzonne.online"}>`,
+    from: `"BB Wings Support" <${process.env.SMTP_USER || ""}>`,
     to,
     subject,
     html,
   };
 
   console.log(`[SMTP] Intentando enviar correo a: ${to}`);
-  console.log(`[SMTP] Host: ${process.env.SMTP_HOST || "smtp.gmail.com"}`);
-  console.log(`[SMTP] Port: ${process.env.SMTP_PORT || "2525"}`);
-  console.log(`[SMTP] User: ${process.env.SMTP_USER || "bbwings@mail.techzonne.online"}`);
+  console.log(`[SMTP] Host: ${process.env.SMTP_HOST || ""}`);
+  console.log(`[SMTP] Port: ${process.env.SMTP_PORT || "587"}`);
+  console.log(`[SMTP] User: ${process.env.SMTP_USER || ""}`);
 
   try {
     const info = await transporter.sendMail(mailOptions);
