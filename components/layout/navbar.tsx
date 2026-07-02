@@ -60,10 +60,12 @@ export function Navbar() {
   }, []);
 
   // ── Close mobile menu on route change ───────────────────────────────────
-  useEffect(() => {
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     setIsMobileOpen(false);
     setIsUserMenuOpen(false);
-  }, [pathname]);
+  }
 
   const handleLogout = async () => {
     setIsUserMenuOpen(false);

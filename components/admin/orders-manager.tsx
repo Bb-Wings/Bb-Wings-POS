@@ -28,7 +28,7 @@ import { formatCurrency, formatRelativeTime, formatOrderNumber } from "@/lib/uti
 
 // ─── Interfaces ────────────────────────────────────────────────────────────
 
-interface OrderItem {
+export interface OrderItem {
   id: number;
   cantidad: number;
   precio_unitario: number;
@@ -40,7 +40,7 @@ interface OrderItem {
   } | null;
 }
 
-interface Order {
+export interface Order {
   id: number;
   numero_pedido: string;
   estado: string;
@@ -128,7 +128,7 @@ export function OrdersManager({ initialOrders }: OrdersManagerProps) {
         } else {
           setErrorMsg(result.error || "No se pudo actualizar el estado.");
         }
-      } catch (err) {
+      } catch {
         setErrorMsg("Error de conexión al servidor.");
       }
     });
@@ -755,7 +755,7 @@ export function OrdersManager({ initialOrders }: OrdersManagerProps) {
                     Notas del Cliente
                   </p>
                   <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.7)", margin: 0, fontStyle: "italic" }}>
-                    "{selectedOrder.notas}"
+                    &ldquo;{selectedOrder.notas}&rdquo;
                   </p>
                 </div>
               )}

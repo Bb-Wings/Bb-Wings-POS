@@ -6,12 +6,22 @@
  * @version 1.0.0
  */
 
-import { createContext, useContext, useEffect, useRef } from "react";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createContext, useContext, useEffect, useState } from "react";
+import type { SupabaseClient, AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/lib/store/auth.store";
 import type { Database } from "@/types/database.types";
 import type { AuthUser } from "@/types/store.types";
+
+type PerfilWithRelations = {
+  id: string;
+  email: string;
+  nombre: string;
+  apellido: string;
+  avatar_url?: string | null;
+  roles?: { nombre: string } | null;
+  clientes?: { id: number; puntos_acumulados: number; nivel_fidelidad: string } | null;
+};
 
 // ─── Context ──────────────────────────────────────────────────────────────
 
@@ -24,11 +34,10 @@ const Context = createContext<SupabaseContext | undefined>(undefined);
 // ─── Provider ─────────────────────────────────────────────────────────────
 
 export function SupabaseProvider({ children }: { children: React.ReactNode }) {
-  const supabaseRef = useRef<SupabaseClient<Database>>(createClient());
+  const [supabase] = useState(() => createClient());
   const { setUser, setTokens, logout } = useAuthStore();
 
   useEffect(() => {
-    const supabase = supabaseRef.current;
 
     // ── Sincronizar sesión inicial ──────────────────────────────────────────
     const syncSession = async () => {
@@ -47,7 +56,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
             .eq("id", session.user.id)
             .single();
 
-          const perfilTyped = perfil as any;
+          const perfilTyped = perfil as unknown as PerfilWithRelations;
           if (perfilTyped) {
             const rolData = perfilTyped.roles;
             const rolNombre = rolData && typeof rolData === "object" && !Array.isArray(rolData)
@@ -65,7 +74,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
               nombre: perfilTyped.nombre,
               apellido: perfilTyped.apellido,
               rol: rolNombre as AuthUser["rol"],
-              avatarUrl: perfilTyped.avatar_url,
+              avatarUrl: perfilTyped.avatar_url ?? null,
               clienteId: cliente?.id ?? null,
               empleadoId: null,
               puntos: cliente?.puntos_acumulados ?? 0,
@@ -77,7 +86,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
             return;
           }
         }
-      } catch (err) {
+      } catch {
         // Ignorar error de red y usar fallback de Server Action
       }
 
@@ -86,7 +95,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
         const { getSession } = await import("@/lib/actions/auth.actions");
         const sessionData = await getSession();
         if (sessionData && sessionData.perfil) {
-          const perfilTyped = sessionData.perfil as any;
+          const perfilTyped = sessionData.perfil as unknown as PerfilWithRelations;
           const rolData = perfilTyped.roles;
           const rolNombre = rolData && typeof rolData === "object" && !Array.isArray(rolData)
             ? (rolData as { nombre: string }).nombre
@@ -98,7 +107,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
             nombre: perfilTyped.nombre,
             apellido: perfilTyped.apellido,
             rol: rolNombre as AuthUser["rol"],
-            avatarUrl: perfilTyped.avatar_url,
+            avatarUrl: perfilTyped.avatar_url ?? null,
             clienteId: null,
             empleadoId: null,
             puntos: 0,
@@ -108,7 +117,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
         } else {
           setUser(null);
         }
-      } catch (e) {
+      } catch {
         setUser(null);
       }
     };
@@ -117,7 +126,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
 
     // ── Escuchar cambios de autenticación ─────────────────────────────────
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: AuthChangeEvent, session: Session | null) => {
         if (event === "SIGNED_IN" && session) {
           // Re-sincronizar al iniciar sesión
           await syncSession();
@@ -136,10 +145,10 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [setUser, setTokens, logout]);
+  }, [setUser, setTokens, logout, supabase]);
 
   return (
-    <Context.Provider value={{ supabase: supabaseRef.current }}>
+    <Context.Provider value={{ supabase }}>
       {children}
     </Context.Provider>
   );

@@ -13,6 +13,13 @@ import type { ActionResult } from "./auth.actions";
 import type { CheckoutFormValues } from "@/lib/validations/order.schema";
 import type { CartItem } from "@/types/store.types";
 
+interface DBProducto {
+  id: number;
+  precio: number;
+  nombre: string;
+  disponible: boolean;
+}
+
 // ─── Create Order Action ──────────────────────────────────────────────────
 
 /**
@@ -64,11 +71,11 @@ export async function createOrderAction(
   }
 
   // Verificar disponibilidad y recalcular precios desde DB (no confiar en el cliente)
-  const preciosMap = new Map((productos as any[]).map((p: any) => [p.id, p]));
+  const preciosMap = new Map((productos as unknown as DBProducto[]).map((p) => [p.id, p]));
   let subtotal = 0;
 
   for (const item of cartItems) {
-    const producto = preciosMap.get(item.productoId) as any;
+    const producto = preciosMap.get(item.productoId);
     if (!producto) {
       return { success: false, error: `Producto #${item.productoId} no encontrado.` };
     }
@@ -150,7 +157,7 @@ export async function createOrderAction(
 
   // ── Crear detalles del pedido ─────────────────────────────────────────────
   const detalles = cartItems.map((item) => {
-    const producto = preciosMap.get(item.productoId) as any;
+    const producto = preciosMap.get(item.productoId);
     const precioUnitario = producto?.precio ?? item.precio;
     const itemSubtotal = Math.round(item.cantidad * precioUnitario * 100) / 100;
 

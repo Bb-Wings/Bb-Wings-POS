@@ -26,6 +26,21 @@ export const metadata: Metadata = {
   title: "Dashboard",
 };
 
+interface RecentOrder {
+  id: number;
+  numero_pedido: string;
+  estado: string;
+  total: number;
+  tipo: string;
+  created_at: string;
+  clientes?: {
+    usuarios?: {
+      nombre: string;
+      apellido: string;
+    } | null;
+  } | null;
+}
+
 // ─── Data Fetching ─────────────────────────────────────────────────────────
 
 async function getDashboardStats() {
@@ -89,7 +104,7 @@ async function getDashboardStats() {
   };
 }
 
-async function getRecentOrders() {
+async function getRecentOrders(): Promise<RecentOrder[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("pedidos")
@@ -99,7 +114,7 @@ async function getRecentOrders() {
     `)
     .order("created_at", { ascending: false })
     .limit(8);
-  return (data as any) ?? [];
+  return (data as unknown as RecentOrder[]) ?? [];
 }
 
 /*
@@ -245,7 +260,7 @@ async function RecentOrdersTable() {
                 </td>
               </tr>
             ) : (
-              orders.map((order: any) => {
+              orders.map((order: RecentOrder) => {
                 const clienteData = order.clientes;
                 const usuarioData = clienteData && typeof clienteData === "object" && !Array.isArray(clienteData)
                   ? (clienteData as { usuarios: { nombre: string; apellido: string } | null }).usuarios

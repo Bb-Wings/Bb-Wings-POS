@@ -8,6 +8,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { OrdersManager } from "@/components/admin/orders-manager";
+import type { Order } from "@/components/admin/orders-manager";
 import { StatCardSkeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
@@ -197,7 +198,7 @@ const MOCK_ORDERS = [
 
 // ─── Data Fetching ─────────────────────────────────────────────────────────
 
-async function getOrders(): Promise<any[]> {
+async function getOrders(): Promise<Order[]> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -238,11 +239,11 @@ async function getOrders(): Promise<any[]> {
       .order("created_at", { ascending: false });
 
     if (error !== null || !data || data.length === 0) {
-      return MOCK_ORDERS;
+      return MOCK_ORDERS as unknown as Order[];
     }
-    return data;
-  } catch (err) {
-    return MOCK_ORDERS;
+    return data as unknown as Order[];
+  } catch {
+    return MOCK_ORDERS as unknown as Order[];
   }
 }
 

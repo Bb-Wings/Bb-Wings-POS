@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import type { User } from "@supabase/supabase-js";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -17,7 +18,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: rolesError.message }, { status: 500 });
     }
 
-    const superAdminRole = roles.find((r: any) => r.nombre === "super_admin");
+    const rolesTyped = roles as { id: number; nombre: string }[] | null;
+    const superAdminRole = rolesTyped?.find((r) => r.nombre === "super_admin");
     if (!superAdminRole) {
       return NextResponse.json({ success: false, error: "super_admin role not found" }, { status: 500 });
     }
@@ -30,7 +32,7 @@ export async function GET(request: Request) {
     }
 
     const usersToPromote = email
-      ? authData.users.filter((u: any) => u.email === email)
+      ? authData.users.filter((u: User) => u.email === email)
       : authData.users;
 
     if (usersToPromote.length === 0) {
@@ -101,7 +103,8 @@ export async function GET(request: Request) {
       message: `Processed ${usersToPromote.length} user(s).`,
       results,
     });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : "Error desconocido";
+    return NextResponse.json({ success: false, error: errMsg }, { status: 500 });
   }
 }

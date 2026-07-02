@@ -111,12 +111,16 @@ export function Modal({
             key="panel"
             className={cn(
               "relative w-full z-10",
-              "bg-card border border-card-border rounded-2xl",
-              "shadow-2xl shadow-black/60",
               "max-h-[90vh] flex flex-col",
               sizeClasses[size],
               className
             )}
+            style={{
+              background: "#1a1a1a",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "20px",
+              boxShadow: "0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset",
+            }}
             initial={{ opacity: 0, scale: 0.95, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 8 }}
@@ -124,12 +128,29 @@ export function Modal({
           >
             {/* Header */}
             {(title !== undefined || !preventClose) && (
-              <div className="flex items-start justify-between gap-4 px-6 pt-6 pb-4 border-b border-card-border flex-shrink-0">
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: "16px",
+                  padding: "22px 24px 18px",
+                  borderBottom: "1px solid rgba(255,255,255,0.07)",
+                  flexShrink: 0,
+                }}
+              >
                 <div>
                   {title && (
                     <h2
                       id="modal-title"
-                      className="text-lg font-semibold text-white font-heading"
+                      style={{
+                        fontSize: "17px",
+                        fontWeight: 700,
+                        color: "#ffffff",
+                        margin: 0,
+                        lineHeight: 1.3,
+                        letterSpacing: "-0.01em",
+                      }}
                     >
                       {title}
                     </h2>
@@ -137,7 +158,12 @@ export function Modal({
                   {description && (
                     <p
                       id="modal-description"
-                      className="mt-1 text-sm text-gray-muted"
+                      style={{
+                        marginTop: "4px",
+                        fontSize: "13px",
+                        color: "rgba(255,255,255,0.4)",
+                        lineHeight: 1.5,
+                      }}
                     >
                       {description}
                     </p>
@@ -147,7 +173,29 @@ export function Modal({
                   <button
                     onClick={onClose}
                     aria-label="Cerrar modal"
-                    className="flex-shrink-0 p-1.5 rounded-lg text-gray-muted hover:text-white hover:bg-white/10 transition-colors"
+                    style={{
+                      flexShrink: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "30px",
+                      height: "30px",
+                      borderRadius: "8px",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      background: "transparent",
+                      color: "rgba(255,255,255,0.45)",
+                      cursor: "pointer",
+                      transition: "all 0.15s",
+                      padding: 0,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.07)";
+                      e.currentTarget.style.color = "#fff";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "rgba(255,255,255,0.45)";
+                    }}
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -156,7 +204,7 @@ export function Modal({
             )}
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto px-6 py-5 min-h-0">
+            <div style={{ flex: 1, overflowY: "auto", padding: "22px 24px", minHeight: 0 }}>
               {children}
             </div>
 

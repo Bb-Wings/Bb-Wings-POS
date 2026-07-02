@@ -115,12 +115,11 @@ export async function middleware(request: NextRequest) {
     .single();
 
   // Extraer el nombre del rol de forma segura
-  const perfilTyped = perfil as any;
-  const rolData = perfilTyped?.roles;
-  const rolNombre: string =
-    rolData && typeof rolData === "object" && !Array.isArray(rolData)
-      ? (rolData as { nombre: string }).nombre
-      : "cliente";
+  const perfilTyped = perfil as unknown as {
+    rol_id: number;
+    roles: { nombre: string } | null;
+  } | null;
+  const rolNombre = perfilTyped?.roles?.nombre ?? "cliente";
 
   // ─── Verificar acceso a rutas de admin ─────────────────────────────────
 

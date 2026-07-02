@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * @fileoverview Supabase Server Client — BB Wings Management System
  * @description Cliente de Supabase para uso en Server Components, Server Actions
@@ -8,6 +9,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/types/database.types";
+import type { User } from "@supabase/supabase-js";
+
+export type PerfilWithRoles = {
+  id: string;
+  nombre: string;
+  apellido: string;
+  rol_id: number;
+  email: string;
+  roles?: {
+    nombre: string;
+    permisos?: unknown;
+  } | null;
+};
 
 // ─── Validation ────────────────────────────────────────────────────────────
 
@@ -33,7 +47,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
  * const { data: { user } } = await supabase.auth.getUser()
  * ```
  */
-export async function createClient() {
+export async function createClient(): Promise<any> {
   // cookies() ahora es async en Next.js 15+
   const cookieStore = await cookies();
 
@@ -74,7 +88,7 @@ export async function createClient() {
  * // Verificar que el usuario es admin antes de usar
  * ```
  */
-export function createAdminClient() {
+export function createAdminClient(): any {
   if (!supabaseServiceKey) {
     throw new Error(
       "[BB Wings] SUPABASE_SERVICE_ROLE_KEY no está definida. " +
@@ -141,8 +155,8 @@ export async function getAuthenticatedUserWithProfile() {
       throw new Error("No user profile");
     }
 
-    return { auth: user, perfil: perfil as any };
-  } catch (err) {
+    return { auth: user, perfil: perfil as unknown as PerfilWithRoles };
+  } catch {
     if (process.env.NODE_ENV === "development") {
       try {
         const cookieStore = await cookies();
@@ -151,7 +165,7 @@ export async function getAuthenticatedUserWithProfile() {
           const mockUser = getMockUserByEmail(mockEmail);
           if (mockUser) {
             return {
-              auth: { id: mockUser.id, email: mockUser.email } as any,
+              auth: { id: mockUser.id, email: mockUser.email } as unknown as User,
               perfil: {
                 id: mockUser.id,
                 nombre: mockUser.nombre,
@@ -162,11 +176,11 @@ export async function getAuthenticatedUserWithProfile() {
                   nombre: mockUser.rol_id === 1 ? "super_admin" : "cliente",
                   permisos: mockUser.rol_id === 1 ? { "*": true } : {}
                 }
-              } as any
+              } as unknown as PerfilWithRoles
             };
           }
         }
-      } catch (e) {
+      } catch {
         // Safe check
       }
     }

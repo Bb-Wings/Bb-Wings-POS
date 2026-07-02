@@ -11,10 +11,14 @@ export interface MockUser {
   apellido: string;
   telefono?: string;
   rol_id: number;
-  roles?: { nombre: string; permisos: any };
+  roles?: { nombre: string; permisos: unknown };
 }
 
-function getMockDb() {
+interface MockDb {
+  users: MockUser[];
+}
+
+function getMockDb(): MockDb {
   if (!fs.existsSync(MOCK_DB_PATH)) {
     const defaultDb = {
       users: [
@@ -33,30 +37,30 @@ function getMockDb() {
     return defaultDb;
   }
   try {
-    return JSON.parse(fs.readFileSync(MOCK_DB_PATH, "utf8"));
+    return JSON.parse(fs.readFileSync(MOCK_DB_PATH, "utf8")) as MockDb;
   } catch {
     return { users: [] };
   }
 }
 
-function saveMockDb(db: any) {
+function saveMockDb(db: MockDb) {
   fs.writeFileSync(MOCK_DB_PATH, JSON.stringify(db, null, 2), "utf8");
 }
 
 export function getMockUserByEmail(email: string): MockUser | undefined {
   const db = getMockDb();
-  return db.users.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
+  return db.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
 }
 
 export function getMockUserById(id: string): MockUser | undefined {
   const db = getMockDb();
-  return db.users.find((u: any) => u.id === id);
+  return db.users.find((u) => u.id === id);
 }
 
 export function addMockUser(user: MockUser) {
   const db = getMockDb();
   // Avoid duplicate
-  if (!db.users.some((u: any) => u.email.toLowerCase() === user.email.toLowerCase())) {
+  if (!db.users.some((u) => u.email.toLowerCase() === user.email.toLowerCase())) {
     db.users.push(user);
     saveMockDb(db);
   }

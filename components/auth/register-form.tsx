@@ -46,7 +46,7 @@ export function RegisterForm() {
       telefono: "",
       password: "",
       confirmPassword: "",
-      acceptTerms: false as any,
+      acceptTerms: false as unknown as true,
     },
   });
 

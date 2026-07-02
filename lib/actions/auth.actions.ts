@@ -12,6 +12,8 @@ import { cookies } from "next/headers";
 import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import type { PerfilWithRoles } from "@/lib/supabase/server";
+import type { User } from "@supabase/supabase-js";
 import { loginSchema, registerSchema } from "@/lib/validations/auth.schema";
 import type { LoginFormValues, RegisterFormValues } from "@/lib/validations/auth.schema";
 import { getMockUserByEmail, addMockUser, getMockUsersCount } from "@/lib/supabase/mockDb";
@@ -58,7 +60,7 @@ export async function loginAction(
 
     const cookieStore = await cookies();
     cookieStore.set("mock_auth_token", email, { path: "/", maxAge: 60 * 60 * 24 * 7 });
-  } catch (err: any) {
+  } catch {
     if (process.env.NODE_ENV === "development") {
       const mockUser = getMockUserByEmail(email);
       if (mockUser && mockUser.password === password) {
@@ -189,7 +191,7 @@ export async function registerAction(
       telefono: telefono ?? undefined,
       rol_id: finalRoleId,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (process.env.NODE_ENV === "development") {
       const existing = getMockUserByEmail(email);
       if (existing) {
@@ -224,7 +226,7 @@ export async function registerAction(
 
     return {
       success: false,
-      error: err.message ?? "Error al crear la cuenta. Intenta de nuevo.",
+      error: err instanceof Error ? err.message : "Error al crear la cuenta. Intenta de nuevo.",
     };
   }
 
@@ -241,13 +243,13 @@ export async function logoutAction(): Promise<void> {
   try {
     const supabase = await createClient();
     await supabase.auth.signOut();
-  } catch (e) {
+  } catch {
     // Safe check
   }
   try {
     const cookieStore = await cookies();
     cookieStore.delete("mock_auth_token");
-  } catch (e) {
+  } catch {
     // Safe check
   }
   revalidatePath("/", "layout");
@@ -280,7 +282,7 @@ export async function getSession() {
       .single();
 
     return { user, perfil };
-  } catch (err) {
+  } catch {
     if (process.env.NODE_ENV === "development") {
       try {
         const cookieStore = await cookies();
@@ -289,7 +291,7 @@ export async function getSession() {
           const mockUser = getMockUserByEmail(mockEmail);
           if (mockUser) {
             return {
-              user: { id: mockUser.id, email: mockUser.email } as any,
+              user: { id: mockUser.id, email: mockUser.email } as unknown as User,
               perfil: {
                 id: mockUser.id,
                 nombre: mockUser.nombre,
@@ -300,11 +302,11 @@ export async function getSession() {
                   nombre: mockUser.rol_id === 1 ? "super_admin" : "cliente",
                   permisos: mockUser.rol_id === 1 ? { "*": true } : {}
                 }
-              } as any
+              } as unknown as PerfilWithRoles
             };
           }
         }
-      } catch (e) {
+      } catch {
         // Safe check
       }
     }
