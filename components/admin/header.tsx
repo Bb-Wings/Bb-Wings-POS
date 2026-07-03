@@ -11,6 +11,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Search, LogOut, User, Settings, ChevronDown } from "lucide-react";
 import { logoutAction } from "@/lib/actions/auth.actions";
+import { useAuthStore } from "@/lib/store/auth.store";
 
 // ─── Props ────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,7 @@ export function AdminHeader({ userName, userRole }: AdminHeaderProps) {
 
   const handleLogout = async () => {
     setIsUserMenuOpen(false);
+    useAuthStore.getState().logout();
     await logoutAction();
   };
 

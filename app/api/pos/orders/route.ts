@@ -85,13 +85,21 @@ export async function POST(request: Request) {
       });
     }
 
-    // Calcular impuestos y total
-    const impuesto = Math.round(subtotal * 0.16 * 100) / 100;
-    const total = Math.round((subtotal + impuesto) * 100) / 100;
+    // Calcular impuestos y total (Sin IVA por tratarse de alimentos)
+    const impuesto = 0;
+    const total = subtotal;
 
     // 4. Generar número de pedido único para POS
     const fecha = new Date();
     const numeroPedido = `POS-${fecha.getFullYear()}${String(fecha.getMonth() + 1).padStart(2, "0")}${String(fecha.getDate()).padStart(2, "0")}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+    // Mapear el tipo de pedido del POS al enum tipo_pedido de la base de datos
+    const dbTipoPedidoMap: Record<string, string> = {
+      mesa: "local",
+      llevar: "para_llevar",
+      domicilio: "delivery"
+    };
+    const dbTipo = dbTipoPedidoMap[tipo] || "local";
 
     // 5. Insertar pedido principal (se marca directamente como "confirmado" o "preparando" ya que lo ingresa el cajero)
     const { data: newOrder, error: orderInsertError } = await adminSupabase
@@ -99,7 +107,7 @@ export async function POST(request: Request) {
       .insert({
         cliente_id: cliente_id ? parseInt(cliente_id, 10) : null,
         numero_pedido: numeroPedido,
-        tipo: tipo,
+        tipo: dbTipo,
         estado: "confirmado", // Confirmado de forma inmediata
         subtotal,
         descuento: 0,
@@ -107,7 +115,8 @@ export async function POST(request: Request) {
         total,
         notas: notas || null,
         direccion_entrega: tipo === "domicilio" ? (direccion_entrega || "Entregar en domicilio") : null,
-        mesa_numero: tipo === "mesa" ? parseInt(mesa_numero, 10) : null
+        mesa_numero: tipo === "mesa" ? parseInt(mesa_numero, 10) : null,
+        token_seguimiento: `TOK-${Math.random().toString(36).substring(2, 10).toUpperCase()}`
       })
       .select("*")
       .single();
@@ -133,19 +142,50 @@ export async function POST(request: Request) {
     }
 
     // 7. Insertar el pago
-    const { error: pagoInsertError } = await adminSupabase
+    const dbMetodoPago = metodo_pago === "tarjeta" ? "tarjeta_credito" : (metodo_pago || "efectivo");
+    const cashValue = parseFloat(monto_pagado) || total;
+    const cambioCalculado = dbMetodoPago === "efectivo" ? Math.max(0, cashValue - total) : 0;
+
+    const { data: newPago, error: pagoInsertError } = await adminSupabase
       .from("pagos")
       .insert({
         pedido_id: newOrder.id,
         monto: total,
-        metodo: metodo_pago || "efectivo",
+        metodo: dbMetodoPago,
         estado: "completado", // Completado de inmediato por caja
-        transaccion_id: null
-      });
+        monto_recibido: dbMetodoPago === "efectivo" ? cashValue : total,
+        cambio: cambioCalculado,
+        procesado_por: staffUser.id
+      })
+      .select("*")
+      .single();
 
-    if (pagoInsertError) {
-      console.error("Error al registrar pago en POS:", pagoInsertError.message);
-      // No revertimos el pedido ya que el pedido fue creado, pero lo registramos en consola
+    if (pagoInsertError || !newPago) {
+      console.error("Error al registrar pago en POS:", pagoInsertError?.message);
+    } else {
+      // 7.5. Generar la factura
+      const folioFiscal = crypto.randomUUID();
+      const numeroFactura = `FAC-${fecha.getFullYear()}${String(fecha.getMonth() + 1).padStart(2, "0")}${String(fecha.getDate()).padStart(2, "0")}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      
+      const { error: facturaInsertError } = await adminSupabase
+        .from("facturas")
+        .insert({
+          pedido_id: newOrder.id,
+          pago_id: newPago.id,
+          numero_factura: numeroFactura,
+          rfc_cliente: "XAXX010101000", // RFC genérico
+          razon_social: "Público en General",
+          cfdi_uso: "S01", // Sin efectos fiscales
+          subtotal: subtotal,
+          iva: impuesto,
+          total: total,
+          timbrada: true,
+          folio_fiscal: folioFiscal
+        });
+
+      if (facturaInsertError) {
+        console.error("Error al registrar factura en POS:", facturaInsertError.message);
+      }
     }
 
     // 8. Acumular puntos al cliente si está registrado
@@ -177,6 +217,62 @@ export async function POST(request: Request) {
       }
     }, { status: 201 });
 
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : "Error desconocido";
+    return NextResponse.json({ success: false, error: errMsg }, { status: 500 });
+  }
+}
+
+export async function GET(request: Request) {
+  try {
+    const supabase = await createClient();
+    const adminSupabase = createAdminClient();
+
+    // 1. Verificar autenticación y rol
+    const { data: { user: staffUser }, error: authError } = await supabase.auth.getUser();
+    if (authError !== null || staffUser === null) {
+      return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 });
+    }
+
+    const { data: perfilStaff } = await supabase
+      .from("usuarios")
+      .select("roles(nombre)")
+      .eq("id", staffUser.id)
+      .single();
+
+    const perfilTyped = perfilStaff as unknown as { roles: { nombre: string } | null } | null;
+    const rolNombre = perfilTyped?.roles?.nombre;
+
+    if (rolNombre !== "cajero" && rolNombre !== "admin" && rolNombre !== "super_admin") {
+      return NextResponse.json({ success: false, error: "Acceso no autorizado" }, { status: 403 });
+    }
+
+    // 2. Obtener los últimos 30 pedidos con detalles, productos y pagos
+    const { data: pedidos, error: pedidosError } = await adminSupabase
+      .from("pedidos")
+      .select(`
+        *,
+        clientes (
+          id,
+          usuarios (
+            nombre,
+            apellido
+          )
+        ),
+        detalle_pedido (
+          *,
+          productos (*)
+        ),
+        pagos (*)
+      `)
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    if (pedidosError) {
+      return NextResponse.json({ success: false, error: pedidosError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, data: pedidos });
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : "Error desconocido";
     return NextResponse.json({ success: false, error: errMsg }, { status: 500 });

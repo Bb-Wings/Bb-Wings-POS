@@ -22,7 +22,7 @@ import {
   Flame,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useIsAuthenticated, useCurrentUser, useIsAdmin } from "@/lib/store/auth.store";
+import { useIsAuthenticated, useCurrentUser, useIsAdmin, useAuthStore } from "@/lib/store/auth.store";
 import { useCartTotalItems, useCartStore } from "@/lib/store/cart.store";
 import { logoutAction } from "@/lib/actions/auth.actions";
 import { cn } from "@/lib/utils/cn";
@@ -69,6 +69,7 @@ export function Navbar() {
 
   const handleLogout = async () => {
     setIsUserMenuOpen(false);
+    useAuthStore.getState().logout();
     await logoutAction();
   };
 

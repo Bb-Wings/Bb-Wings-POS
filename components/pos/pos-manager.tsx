@@ -18,11 +18,14 @@ import {
   User,
   ShoppingBag,
   ArrowLeft,
+  Printer,
+  ClipboardList,
 } from "lucide-react";
 import type { DbProducto } from "@/types/database.types";
 import { useToast } from "@/lib/store/ui.store";
 import { formatCurrency } from "@/lib/utils/formatters";
 import { Modal } from "@/components/ui/modal";
+import { RecentOrdersModal } from "@/components/pos/recent-orders-modal";
 
 // ─── Interfaces ────────────────────────────────────────────────────────────
 
@@ -74,7 +77,14 @@ export function PosManager({
   const [amountPaid, setAmountPaid] = useState("");
   const [isPending, startTransition] = useTransition();
 
+  // Pedidos Recientes
+  const [isRecentOrdersModalOpen, setIsRecentOrdersModalOpen] = useState(false);
+
   const toast = useToast();
+
+  const handleOpenRecentOrders = () => {
+    setIsRecentOrdersModalOpen(true);
+  };
 
   // ─── Cart Helpers ─────────────────────────────────────────────────────────
 
@@ -127,8 +137,8 @@ export function PosManager({
   // ─── Totals Calculation ───────────────────────────────────────────────────
 
   const subtotal = cart.reduce((acc, item) => acc + item.cantidad * item.product.precio, 0);
-  const tax = Math.round(subtotal * 0.16 * 100) / 100;
-  const total = Math.round((subtotal + tax) * 100) / 100;
+  const tax = 0; // Sin IVA por tratarse de alimentos
+  const total = subtotal;
 
   // ─── Checkout Flow ────────────────────────────────────────────────────────
 
@@ -139,6 +149,280 @@ export function PosManager({
     }
     setAmountPaid(String(total));
     setIsPayModalOpen(true);
+  };
+
+  const printReceipt = (numeroPedido: string, change: number) => {
+    const clientName = selectedClientId === "general"
+      ? "Público en General"
+      : (() => {
+          const c = clients.find(cl => String(cl.id) === selectedClientId);
+          return c?.usuarios ? `${c.usuarios.nombre} ${c.usuarios.apellido}` : "Cliente Registrado";
+        })();
+
+    const ticketHtml = `
+      <html>
+        <head>
+          <title>Ticket ${numeroPedido}</title>
+          <meta charset="utf-8" />
+          <style>
+            @page {
+              size: 58mm auto;
+              margin: 0;
+            }
+            body {
+              font-family: 'Courier New', Courier, monospace;
+              width: 54mm;
+              margin: 0;
+              padding: 2mm 1mm;
+              font-size: 9px;
+              color: #000;
+              background: #fff;
+            }
+            .center { text-align: center; }
+            .right { text-align: right; }
+            .bold { font-weight: bold; }
+            .header { margin-bottom: 2mm; }
+            .logo { font-size: 13px; font-weight: bold; margin-bottom: 2px; }
+            .divider { border-top: 1px dashed #000; margin: 1.5mm 0; }
+            table { width: 100%; border-collapse: collapse; }
+            th { text-align: left; border-bottom: 1px solid #000; padding-bottom: 0.5mm; font-size: 9px; }
+            td { padding: 0.5mm 0; vertical-align: top; font-size: 9px; }
+            .totals td { padding: 0.3mm 0; }
+            .footer { margin-top: 4mm; font-size: 8px; }
+          </style>
+        </head>
+        <body>
+          <div class="header center">
+            <div class="logo">BB WINGS</div>
+            <div>GESTIÓN DE CUENTAS</div>
+            <div>Sucursal Central</div>
+            <div class="divider"></div>
+            <div><strong>TICKET DE COMPRA</strong></div>
+            <div>${numeroPedido}</div>
+            <div>Fecha: ${new Date().toLocaleString('es-MX')}</div>
+            <div>Tipo: ${orderType.toUpperCase()} ${orderType === 'mesa' ? `(Mesa ${tableNumber})` : ''}</div>
+            <div>Cajero: ${clientName}</div>
+          </div>
+
+          <div class="divider"></div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 10%;">CANT</th>
+                <th style="width: 60%;">DESCRIPCIÓN</th>
+                <th class="right" style="width: 30%;">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${cart.map(item => `
+                <tr>
+                  <td>${item.cantidad}</td>
+                  <td>
+                    ${item.product.nombre}
+                    ${item.notas ? `<br/><span style="font-size: 9px; font-style: italic;">* ${item.notas}</span>` : ''}
+                  </td>
+                  <td class="right">${formatCurrency(item.product.precio * item.cantidad)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="divider"></div>
+
+          <table class="totals">
+            <tr>
+              <td>Subtotal:</td>
+              <td class="right">${formatCurrency(subtotal)}</td>
+            </tr>
+            <tr>
+              <td>IVA (0%):</td>
+              <td class="right">$0.00</td>
+            </tr>
+            <tr class="bold">
+              <td>TOTAL:</td>
+              <td class="right">${formatCurrency(total)}</td>
+            </tr>
+            <tr><td colspan="2"><div class="divider"></div></td></tr>
+            <tr>
+              <td>Método de Pago:</td>
+              <td class="right" style="text-transform: capitalize;">${paymentMethod}</td>
+            </tr>
+            <tr>
+              <td>Monto Recibido:</td>
+              <td class="right">${formatCurrency(paymentMethod === 'efectivo' ? parseFloat(amountPaid) || total : total)}</td>
+            </tr>
+            <tr>
+              <td>Cambio:</td>
+              <td class="right">${formatCurrency(change)}</td>
+            </tr>
+          </table>
+
+          <div class="divider"></div>
+
+          <div class="footer center">
+            <p class="bold">¡GRACIAS POR SU PREFERENCIA!</p>
+            <p>Para facturar ingrese a:<br/>bbwings.com/facturacion</p>
+            <p>Este no es un comprobante fiscal.</p>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "_blank", "width=600,height=800");
+    if (printWindow) {
+      printWindow.document.write(ticketHtml);
+      printWindow.document.close();
+    } else {
+      toast.error("Bloqueador de ventanas", "Permite las ventanas emergentes para imprimir el ticket.");
+    }
+  };
+
+  const printReceiptGeneric = (order: any) => {
+    const clientName = order.clientes?.usuarios
+      ? `${order.clientes.usuarios.nombre} ${order.clientes.usuarios.apellido}`
+      : "Público en General";
+
+    const orderTypeStr = order.tipo === "local" ? "mesa" : (order.tipo === "para_llevar" ? "llevar" : "domicilio");
+    const tableNumberStr = order.mesa_numero || "";
+    
+    const items = order.detalle_pedido || [];
+    const payment = order.pagos?.[0] || {};
+    const methodStr = payment.metodo || "efectivo";
+    const amountPaidVal = payment.monto_recibido || order.total;
+    const changeVal = payment.cambio || 0;
+
+    const ticketHtml = `
+      <html>
+        <head>
+          <title>Ticket ${order.numero_pedido}</title>
+          <meta charset="utf-8" />
+          <style>
+            @page {
+              size: 58mm auto;
+              margin: 0;
+            }
+            body {
+              font-family: 'Courier New', Courier, monospace;
+              width: 54mm;
+              margin: 0;
+              padding: 2mm 1mm;
+              font-size: 9px;
+              color: #000;
+              background: #fff;
+            }
+            .center { text-align: center; }
+            .right { text-align: right; }
+            .bold { font-weight: bold; }
+            .header { margin-bottom: 2mm; }
+            .logo { font-size: 13px; font-weight: bold; margin-bottom: 2px; }
+            .divider { border-top: 1px dashed #000; margin: 1.5mm 0; }
+            table { width: 100%; border-collapse: collapse; }
+            th { text-align: left; border-bottom: 1px solid #000; padding-bottom: 0.5mm; font-size: 9px; }
+            td { padding: 0.5mm 0; vertical-align: top; font-size: 9px; }
+            .totals td { padding: 0.3mm 0; }
+            .footer { margin-top: 4mm; font-size: 8px; }
+          </style>
+        </head>
+        <body>
+          <div class="header center">
+            <div class="logo">BB WINGS</div>
+            <div>GESTIÓN DE CUENTAS</div>
+            <div>Sucursal Central</div>
+            <div class="divider"></div>
+            <div><strong>TICKET DE COMPRA (REIMPRESIÓN)</strong></div>
+            <div>${order.numero_pedido}</div>
+            <div>Fecha: ${new Date(order.created_at).toLocaleString('es-MX')}</div>
+            <div>Tipo: ${orderTypeStr.toUpperCase()} ${orderTypeStr === 'mesa' ? `(Mesa ${tableNumberStr})` : ''}</div>
+            <div>Cajero: ${clientName}</div>
+          </div>
+
+          <div class="divider"></div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 10%;">CANT</th>
+                <th style="width: 60%;">DESCRIPCIÓN</th>
+                <th class="right" style="width: 30%;">TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map((item: any) => `
+                <tr>
+                  <td>${item.cantidad}</td>
+                  <td>
+                    ${item.productos?.nombre || 'Producto'}
+                    ${item.notas ? `<br/><span style="font-size: 9px; font-style: italic;">* ${item.notas}</span>` : ''}
+                  </td>
+                  <td class="right">${formatCurrency(item.precio_unitario * item.cantidad)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="divider"></div>
+
+          <table class="totals">
+            <tr>
+              <td>Subtotal:</td>
+              <td class="right">${formatCurrency(order.subtotal)}</td>
+            </tr>
+            <tr>
+              <td>IVA (0%):</td>
+              <td class="right">$0.00</td>
+            </tr>
+            <tr class="bold">
+              <td>TOTAL:</td>
+              <td class="right">${formatCurrency(order.total)}</td>
+            </tr>
+            <tr><td colspan="2"><div class="divider"></div></td></tr>
+            <tr>
+              <td>Método de Pago:</td>
+              <td class="right" style="text-transform: capitalize;">${methodStr === 'tarjeta_credito' ? 'Tarjeta' : methodStr}</td>
+            </tr>
+            <tr>
+              <td>Monto Recibido:</td>
+              <td class="right">${formatCurrency(amountPaidVal)}</td>
+            </tr>
+            <tr>
+              <td>Cambio:</td>
+              <td class="right">${formatCurrency(changeVal)}</td>
+            </tr>
+          </table>
+
+          <div class="divider"></div>
+
+          <div class="footer center">
+            <p class="bold">¡GRACIAS POR SU PREFERENCIA!</p>
+            <p>Para facturar ingrese a:<br/>bbwings.com/facturacion</p>
+            <p>Este no es un comprobante fiscal.</p>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "_blank", "width=600,height=800");
+    if (printWindow) {
+      printWindow.document.write(ticketHtml);
+      printWindow.document.close();
+    } else {
+      toast.error("Bloqueador de ventanas", "Permite las ventanas emergentes para imprimir el ticket.");
+    }
   };
 
   const handlePlaceOrder = () => {
@@ -181,6 +465,7 @@ export function PosManager({
             }`
           );
           setIsPayModalOpen(false);
+          printReceipt(result.data.numero_pedido, change);
           clearCart();
         } else {
           toast.error("Error al registrar", result.error || "No se pudo colocar el pedido.");
@@ -289,25 +574,49 @@ export function PosManager({
             </div>
           </div>
 
-          <div style={{ position: "relative", width: "260px" }}>
-            <Search
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <button
+              onClick={handleOpenRecentOrders}
               style={{
-                position: "absolute",
-                left: "10px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                width: "14px",
-                height: "14px",
-                color: "rgba(255,255,255,0.3)",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "8px 12px",
+                height: "36px",
+                borderRadius: "8px",
+                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(255,255,255,0.02)",
+                color: "#fff",
+                fontSize: "0.82rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                whiteSpace: "nowrap"
               }}
-            />
-            <input
-              type="text"
-              placeholder="Buscar platillo o bebida..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ ...inputStyle, paddingLeft: "32px", height: "36px" }}
-            />
+            >
+              <ClipboardList className="w-4 h-4 text-[#ea580c]" />
+              Ver Recientes
+            </button>
+
+            <div style={{ position: "relative", width: "260px" }}>
+              <Search
+                style={{
+                  position: "absolute",
+                  left: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: "14px",
+                  height: "14px",
+                  color: "rgba(255,255,255,0.3)",
+                }}
+              />
+              <input
+                type="text"
+                placeholder="Buscar platillo o bebida..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ ...inputStyle, paddingLeft: "32px", height: "36px" }}
+              />
+            </div>
           </div>
         </div>
 
@@ -315,13 +624,11 @@ export function PosManager({
         <div
           style={{
             display: "flex",
+            flexWrap: "wrap",
             gap: "8px",
-            overflowX: "auto",
-            paddingBottom: "10px",
-            marginBottom: "1rem",
+            marginBottom: "1.25rem",
             flexShrink: 0,
           }}
-          className="scrollbar-hide"
         >
           <button
             onClick={() => setSelectedCategoryId("all")}
@@ -798,6 +1105,13 @@ export function PosManager({
           </div>
         </div>
       </Modal>
+
+      {/* Modal de Pedidos Recientes para Reimpresión */}
+      <RecentOrdersModal
+        isOpen={isRecentOrdersModalOpen}
+        onClose={() => setIsRecentOrdersModalOpen(false)}
+        onReprint={printReceiptGeneric}
+      />
     </div>
   );
 }
