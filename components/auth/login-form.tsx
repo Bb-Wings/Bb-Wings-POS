@@ -79,6 +79,22 @@ export function LoginForm() {
     });
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      toast.error("Error", err.message || "Error al iniciar sesión con Google.");
+    }
+  };
+
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -188,7 +204,7 @@ export function LoginForm() {
         <button
           type="button"
           id="login-google"
-          onClick={() => { toast.info("Próximamente", "El login con Google estará disponible pronto."); }}
+          onClick={handleGoogleLogin}
           style={{
             display: "flex",
             alignItems: "center",

@@ -18,7 +18,6 @@ import {
   User,
   ShoppingBag,
   ArrowLeft,
-  Printer,
   ClipboardList,
 } from "lucide-react";
 import type { DbProducto } from "@/types/database.types";
